@@ -1,0 +1,6 @@
+- [User hardware & machine](user-hardware-and-machine.md) — ESP32/ESP32-CAM/Arduino/DRV8833/4xNiMH, RTX 5050 8 GB, little disk, slow downloads
+- [Sewerbot Webots gotchas](project-sewerbot-webots-gotchas.md) — ENU cylinder axis, boundingObject rules, Windows UDP reset, other time-sinks
+- [simlab generalisation + Builder + AI planner](project-simlab-generalisation.md) — any-machine simulator, parts Builder, pipe env, OpenRouter AI planner (Inkling is gated; Nemotron default), visuals, brief regeneration: user choices, GL/JS/lighting pitfalls, no real-rover data yet
+- [Chat shell (Phase U)](project-chat-shell-phase-u.md) — /chat sidebar + right pane registry (chat-shell.js), projects local-only, where Phase C cards plug in
+- [Rover loop plan v5](project-rover-loop-v5.md) — approved plan, pin conflicts (MPU on 32/33, TRIG on 34), what is built, hardware gates are the user's
+- [Missions M0/M1 (bag/box)](project-missions-m0-m1.md) — simlab/missions runner+targets+bag_mission task, rover plug-in API, sim pitfalls
