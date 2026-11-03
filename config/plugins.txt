@@ -1,0 +1,2 @@
+# Plug-in modules loaded when simlab starts, one per line. Remove a line to disable that plug-in.
+simlab.plugins.boat        # a boat: vehicle kind + MuJoCo plant + two presets (example of the plug-in system)

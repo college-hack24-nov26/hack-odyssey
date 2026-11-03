@@ -1,0 +1,24 @@
+# Hub chamber with branches in five directions (E, NE, N, W, S), each ending at a coloured goal post.
+# The W branch is a narrow 0.65 m pipe: the big rovers will be refused there by the fit check.
+name: star_five_goals
+start: {node: H}
+nodes:
+  H:  {pos: [0, 0],    kind: junction}
+  GE: {pos: [24, 0],   kind: end}
+  GN: {pos: [0, 22],   kind: end}
+  GS: {pos: [0, -20],  kind: end}
+  GW: {pos: [-20, 0],  kind: end}
+  GNE: {pos: [16, 16], kind: end}
+edges:
+  - {id: east,  from: H, to: GE,  shape: circular, diameter: 1.0}
+  - {id: north, from: H, to: GN,  shape: circular, diameter: 0.9}
+  - {id: south, from: H, to: GS,  shape: oval, width: 0.9, height: 1.2}
+  - {id: west,  from: H, to: GW,  shape: circular, diameter: 0.65}
+  - {id: ne,    from: H, to: GNE, shape: circular, diameter: 0.9}
+goals:
+  - {id: GOAL_E,  node: GE,  color: green}
+  - {id: GOAL_N,  node: GN,  color: blue}
+  - {id: GOAL_S,  node: GS,  color: red}
+  - {id: GOAL_W,  node: GW,  color: yellow}
+  - {id: GOAL_NE, node: GNE, color: magenta}
+random_defects: {count: 16, seed: 5}

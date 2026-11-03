@@ -1,0 +1,23 @@
+# Straight pipe, then a T-junction. Easy first map for every rover preset.
+name: straight_t
+start: {node: A}
+nodes:
+  A: {pos: [0, 0],   kind: entry}
+  J: {pos: [18, 0],  kind: junction}
+  E: {pos: [36, 0],  kind: end}
+  S: {pos: [18, -14], kind: end}
+edges:
+  - {id: e1, from: A, to: J, shape: circular, diameter: 0.9}
+  - {id: e2, from: J, to: E, shape: circular, diameter: 0.9}
+  - {id: e3, from: J, to: S, shape: circular, diameter: 0.8}
+goals:
+  - {id: GOAL_EAST,  node: E, color: green}
+  - {id: GOAL_SOUTH, node: S, color: red}
+defects:
+  - {id: D01, edge: e1, s: 6.0,  angle: 160, type: crack, subtype: longitudinal,   size: [0.45, 0.60], severity: 0.7}
+  - {id: D02, edge: e1, s: 12.5, angle: 20,  type: leak,  subtype: seep,           size: [0.55, 0.45], severity: 0.6}
+  - {id: D03, edge: e2, s: 8.0,  angle: 95,  type: crack, subtype: circumferential, size: [0.80, 0.30], severity: 0.8}
+  - {id: D04, edge: e2, s: 14.0, angle: 170, type: leak,  subtype: drip,           size: [0.30, 0.50], severity: 0.5}
+  - {id: D05, edge: e3, s: 6.5,  angle: 10,  type: crack, subtype: branching,      size: [0.50, 0.50], severity: 0.9}
+  - {id: D06, edge: e3, s: 10.0, angle: 120, type: leak,  subtype: streak,         size: [0.35, 0.70], severity: 0.7}
+random_defects: {count: 4, seed: 11}

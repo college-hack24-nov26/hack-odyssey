@@ -1,0 +1,17 @@
+# A short straight pipe for quick checks and tests: 16 m, one junction in the middle, four planted defects.
+name: short_pipe
+start: {node: A}
+nodes:
+  A: {pos: [0, 0],  kind: entry}
+  J: {pos: [8, 0],  kind: junction}
+  E: {pos: [16, 0], kind: end}
+edges:
+  - {id: e1, from: A, to: J, shape: circular, diameter: 0.9}
+  - {id: e2, from: J, to: E, shape: circular, diameter: 0.9}
+goals:
+  - {id: GOAL_END, node: E, color: green}
+defects:
+  - {id: D01, edge: e1, s: 4.0, angle: 160, type: crack, subtype: longitudinal,   size: [0.45, 0.60], severity: 0.7}
+  - {id: D02, edge: e1, s: 6.0, angle: 20,  type: leak,  subtype: seep,           size: [0.55, 0.45], severity: 0.6}
+  - {id: D03, edge: e2, s: 3.0, angle: 95,  type: crack, subtype: circumferential, size: [0.80, 0.30], severity: 0.8}
+  - {id: D04, edge: e2, s: 5.5, angle: 170, type: leak,  subtype: drip,           size: [0.30, 0.50], severity: 0.5}

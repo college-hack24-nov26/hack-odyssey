@@ -1,0 +1,19 @@
+# A big trunk loop (large oval + box culvert sections) with a small feeder branch.
+name: large_loop
+start: {node: N1}
+nodes:
+  N1: {pos: [0, 0],    kind: entry}
+  N2: {pos: [30, 0],   kind: junction}
+  N3: {pos: [30, 26],  kind: junction}
+  N4: {pos: [0, 26],   kind: junction}
+  F1: {pos: [-16, 26], kind: end}
+edges:
+  - {id: t1, from: N1, to: N2, shape: oval, width: 1.6, height: 2.0}
+  - {id: t2, from: N2, to: N3, shape: box,  width: 1.8, height: 1.5}
+  - {id: t3, from: N3, to: N4, shape: oval, width: 1.6, height: 2.0}
+  - {id: t4, from: N4, to: N1, shape: box,  width: 1.8, height: 1.5}
+  - {id: f1, from: N4, to: F1, shape: circular, diameter: 0.7}
+goals:
+  - {id: GOAL_FEEDER, node: F1, color: orange}
+  - {id: GOAL_N3,     node: N3, color: cyan}
+random_defects: {count: 18, seed: 21}

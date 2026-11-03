@@ -1,0 +1,24 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.claude/
+
+# large / regenerable artefacts
+datasets/
+models/
+runs/
+sim/webots/worlds/
+sim/webots/textures/
+*.pth
+*.pt
+*.ckpt
+*.zip
+
+# your own parts, builds and inventory (the Builder writes these)
+config/parts/
+config/builds/
+config/inventory.yaml
+
+# the OpenRouter key (never commit it)
+config/llm.json

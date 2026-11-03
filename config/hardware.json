@@ -1,0 +1,36 @@
+{
+ "profile": {
+  "name": "esp32_rover",
+  "drive": "diff2wd",
+  "length": 0.16,
+  "width": 0.12,
+  "height": 0.06,
+  "wheel_radius": 0.033,
+  "mass": 0.6,
+  "max_speed": 0.2,
+  "max_accel": 0.5,
+  "max_yaw_rate": 1.5,
+  "yaw_gain": 0.85,
+  "light_intensity": 1.2,
+  "camera": {
+   "height": 0.08,
+   "tilt_deg": -10.0,
+   "fov_deg": 62.0,
+   "width_px": 640,
+   "height_px": 480,
+   "fps": 12.0,
+   "noise": 0.0,
+   "motion_blur_ms": 0.0,
+   "fisheye": false,
+   "auto_exposure": false
+  }
+ },
+ "pipe_diameter": 0.9,
+ "rover_host": "",
+ "cam_url": "",
+ "speed_scale": 1.0,
+ "serial_cal": {
+  "calibrated": false,
+  "level": 180
+ }
+}

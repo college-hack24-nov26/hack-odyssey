@@ -1,0 +1,34 @@
+[project]
+name = "sewerbot"
+version = "0.1.0"
+description = "Sewer inspection rover: Webots simulation + ESP32/ESP32-CAM hardware, one shared brain"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+  "numpy>=1.26",
+  "opencv-python>=4.9",
+  "pillow>=10",
+  "pyyaml>=6",
+  "fastapi>=0.110",
+  "uvicorn[standard]>=0.29",
+  "websockets>=12",
+  "requests>=2.31",
+  "pyserial>=3.5",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+# GPU training/inference (install torch from the cu128 index first, see docs/SETUP.md)
+ml = ["rfdetr", "supervision"]
+# simlab: MuJoCo backend, Gymnasium environments, RL training
+lab = ["mujoco>=3.1", "gymnasium>=1.0", "stable-baselines3>=2.3", "tensorboard"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.setuptools.packages.find]
+# tools/ is imported by sewerbot.brain.sim (world generation), so it ships with the package
+include = ["sewerbot*", "simlab*", "tools*"]
+
+[tool.setuptools.package-data]
+simlab = ["parts/library/*/*.yaml", "goals/catalogue/*.yaml", "hazards/catalogue/*.yaml", "vehicles/presets/*.yaml", "tasks/presets/*.yaml", "plugins/boat_presets/*.yaml", "dashboard/static/*", "dashboard/static/vendor/*", "dashboard/static/models/*"]
