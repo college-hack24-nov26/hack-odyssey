@@ -282,6 +282,10 @@ def tests_queued(position: int) -> str:
     return f"Another test run is going. This one is next in line (position {position})."
 
 
+def queued_cancelled() -> str:
+    return "Cancelled before it started."
+
+
 def tests_nothing() -> str:
     return "There is nothing to run: every test here is one the simulator cannot do. They are listed as not tested."
 
@@ -310,6 +314,10 @@ def results_message(headline: str, weakest: str | None, bar: str, n_not_tested: 
 
 def results_next() -> str:
     return "Next: watch the weakest test, make it tougher, or get the build sheet."
+
+
+def results_running(progress: dict) -> str:
+    return f"Condition {min(progress.get('done', 0) + 1, max(progress.get('total', 1), 1))} of {progress.get('total', 0)}" + (" (stopping after this one)" if progress.get("stopping") else "")
 
 
 def results_error(detail: str) -> str:
@@ -551,8 +559,8 @@ SAMPLES: dict[str, tuple] = {
     "job_number_set": ("distance", 150, "m"), "task_param_set": ("range", 80, "m"), "untestable_added": ("Rain", "Rain is not simulated here."), "already_there": ("The bar",),
     "no_such_test": ("snow",), "nothing_to_undo": (), "nothing_to_redo": (), "undone": ("waves top level",), "redone": ("waves top level",), "edits_failed": (2, "the AI plan"),
     "stale_note": (), "needs_value": ("runtime",), "value_chip": ("Runtime", 60, "min"), "did_you_mean": (), "new_chat_question": (), "help_text": (),
-    "tests_started": (23, 92), "tests_stopping": (), "tests_queued": (1,), "tests_nothing": (), "results_headline": (14, 23, 0, 9, True), "weakest_line": ("Waves", "Starts to fail at 0.6 m."),
-    "results_message": ("Met the bar in 3 of 4 simulated conditions.", "Weakest: Waves.", "75% of tries succeed", 7), "results_next": (), "results_error": ("a failure",),
+    "tests_started": (23, 92), "tests_stopping": (), "tests_queued": (1,), "tests_nothing": (), "queued_cancelled": (), "results_headline": (14, 23, 0, 9, True), "weakest_line": ("Waves", "Starts to fail at 0.6 m."),
+    "results_message": ("Met the bar in 3 of 4 simulated conditions.", "Weakest: Waves.", "75% of tries succeed", 7), "results_next": (), "results_error": ("a failure",), "results_running": ({"done": 8, "total": 24, "stopping": True},),
     "interrupted": ("The test run",), "watch_label": ("calm conditions", 1), "watch_started": ("waves 0.6 m", "user"), "watch_replaced": (), "watch_busy_auto": (), "watch_may_be_slow": (),
     "watch_no_mujoco": (), "watch_not_watchable": ("A thruster fails",), "watch_no_design": (), "watch_finished": (True, 41.2), "ai_started": (4,), "ai_stopped": (),
     "ai_unavailable": ("no key", "Reach a person in the water"), "ai_unavailable_no_draft": ("no key",), "ai_unsupported": ("The AI says this needs a submarine.",), "ai_quota_gone": (),

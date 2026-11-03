@@ -211,8 +211,17 @@ class Engine:
             if pos:
                 queue.append({"id": t.id, "label": t.label, "position": pos, "cancel": {"type": "cancel_queued", "args": {"ticket": t.id}}})
         runs = chat.s.get("runs", [])
-        chat.emit("dock", steps=steps, elapsed=elapsed, ai={"running": running_ai, "state": ai.get("state"), "phase": ai.get("phase"), "seconds": ai.get("seconds", 0)}, queue=queue,
-                  busy={"plan": running_ai, "sweep": stress.get("state") in ("running", "stopping"), "live": bool(runs and runs[-1]["state"] == "running")})
+        payload = {"steps": steps, "elapsed": elapsed, "started": p.get("t0"), "done": bool(p.get("done")),
+                   "ai": {"running": running_ai, "state": ai.get("state"), "phase": ai.get("phase"), "seconds": ai.get("seconds", 0)}, "queue": queue,
+                   "busy": {"plan": running_ai, "sweep": stress.get("state") in ("running", "stopping"), "live": bool(runs and runs[-1]["state"] == "running")}}
+        prev = dict(chat.view.dock)
+        if not payload["done"]:                                    # while a step runs the page ticks `elapsed` itself from `started`: only a real change is an event
+            prev.pop("elapsed", None)
+            same = prev == {k: v for k, v in payload.items() if k != "elapsed"}
+        else:
+            same = prev == payload
+        if not same:
+            chat.emit("dock", **payload)
 
     def _step(self, chat: Chat, step_id: str, state: str, detail: str = "") -> None:
         p = chat.s["pipeline"]
@@ -300,6 +309,13 @@ class Engine:
 
     def send(self, chat: Chat, text: str | None = None, action: dict | None = None, client_msg_id: str | None = None, label: str | None = None) -> dict:
         """Record a turn and queue it. Returns what the 202 answer carries. Nothing slow happens here."""
+        if client_msg_id:                                           # a page that retried a send must not run the turn twice
+            with chat.cond:
+                dup = next((m for m in chat.view.messages if m.get("client_msg_id") == client_msg_id), None)
+            if dup is not None:
+                i = dup.get("intent") or {}
+                return {"turn_id": dup.get("turn_id"), "accepted": True, "duplicate": True, "message_id": dup["id"], "seq": chat.seq,
+                        "intent": {"kind": i.get("kind"), "source": i.get("source"), "confidence": i.get("confidence"), "read_as": i.get("read_as")}}
         intent = intents.parse(text, action, self.ctx(chat))
         turn_id = chat.next_id("t")
         shown = text if text else (label or (action or {}).get("type", "") or "")
@@ -356,6 +372,9 @@ class Engine:
         elif kind == "redo":
             self._undo_redo(chat, redo=True)
         elif kind == "new_job":
+            if chat.book is not None:                                   # this chat has a job: ask, and keep the question's chips on screen
+                self._confirm_new(chat, a.get("text") or text or "")
+                return chat.save()
             self._new_job(chat, a.get("text") or text or "", a.get("kit"))
         elif kind == "use_kit":
             self._use_kit(chat, a.get("kit"))
@@ -377,6 +396,7 @@ class Engine:
             self._answer(chat, kind, text or "")
         elif kind == "confirm_new":
             self._confirm_new(chat, a.get("text") or text or "")
+            return chat.save()                                          # keep the question's own chips on screen: the usual suggestions would replace them
         elif kind == "keep_here":
             pass
         elif kind == "cancel_queued":
@@ -725,8 +745,8 @@ class Engine:
             chat.message("assistant", " ".join(out.clamps))
         if out.applied:
             if book.history:
-                book.history[book.cursor - 1]["label"] = "; ".join(out.notes)
-            chat.message("assistant", words.read_as("; ".join(out.notes) + "."), kind="read_as", turn_id=None,
+                book.history[book.cursor - 1]["label"] = "; ".join(n.rstrip(".") for n in out.notes)
+            chat.message("assistant", words.read_as("; ".join(n.rstrip(".") for n in out.notes) + "."), kind="read_as", turn_id=None,
                          undo={"type": "undo", "args": {}}, ops=out.applied)
             if out.clamps:
                 chat.message("assistant", " ".join(out.clamps), kind="note")
@@ -917,14 +937,12 @@ class Engine:
         runner = self._get_runner()
         n = len(s.get("runs", [])) + 1
         run_id = f"w{n}"
-        label = words.watch_label(ctext, n if False else 1) if not hz else f"{words.watch_label(ctext)} {words.WATCH_SIMILAR}"
+        label = words.watch_label(ctext) if not hz else f"{words.watch_label(ctext)} {words.WATCH_SIMILAR}"
         run = {"id": run_id, "n": n, "label": label, "source": source, "conditions": {k: round(v, 4) for k, v in hz.items()}, "conditions_text": ctext, "state": "starting",
                "started": time.time(), "scene_id": None, "result": None, "final": None, "note": None, "similar": bool(hz)}
 
-        def on_preempt(old):
-            self._finish_run(chat, old_run_id[0], "replaced", note=words.watch_replaced())
-
-        old_run_id = [next((r["id"] for r in reversed(s.get("runs", [])) if r["state"] in ("running", "starting")), None)]
+        def on_preempt(old):                                         # runs when a newer watch takes the view from THIS one
+            self._finish_run(chat, run_id, "replaced", note=words.watch_replaced())
 
         def start(ticket):
             with chat.cond:
@@ -933,7 +951,7 @@ class Engine:
                 chat.tickets[ticket.id] = ticket
                 chat.put_card(cards.watch(s, True))
             try:
-                runner.start(vehicle, task, policy="baseline", backend="mujoco", speed=1.0, seed=1, loop=False, hazards=rt)
+                runner.start(vehicle, task, policy="baseline", backend="mujoco", speed=1.0, seed=0, loop=False, hazards=rt)    # seed 0 is "try 1", the same first try a stress test runs
             except Exception as e:
                 self._finish_run(chat, run_id, "error", note=_err(e))
                 self.resources.live.release(ticket)
@@ -1033,22 +1051,24 @@ class Engine:
                 return chat.message("assistant", words.tests_nothing()) and None
             snap = {"sigs": {i: book.case_sig(book.get(i)) for i in case_ids}, "expected": {i: (len(book.get(i)["sweep"]["levels"]) if book.get(i)["kind"] == "sweep" else 1) for i in case_ids},
                     "bars": {i: book.get(i)["pass"]["value"] for i in case_ids}, "titles": {i: book.get(i)["title"] for i in case_ids}}
-            n = len(s.get("results", [])) + 1 + len([1 for r in chat.view.cards.values() if r["type"] == "results" and r["state"] in ("queued", "running")])
             n = int(chat.next_id("r")[1:])
             run = {"id": f"r{n}", "card": f"results-{n}", "n": n, "started": time.time(), "case_ids": case_ids, "state": "queued", "conditions": book.n_conditions(case_ids), "tries": book.n_tries(case_ids)}
             machine = s["proposals"][s.get("pick", 0)]
         cancel = threading.Event()
 
         def start(ticket):
+            chat.job_started()                                       # counted before the thread exists, so the chat is never "idle" between the turn and the work
             threading.Thread(target=self._sweep_thread, args=(chat, ticket, run, groups, snap, machine, cancel), daemon=True, name="chat-sweep").start()
 
         ticket = self.resources.sweep.request(chat.id, f"Run {words.plural(len(case_ids), 'test')}", start, on_cancel=lambda t: cancel.set())
+        ticket.card = run["card"]                                    # so withdrawing a queued ticket can say which results card it was
         chat.tickets[ticket.id] = ticket
         chat.cancel[run["id"]] = cancel
         if ticket.state == "queued":
             pos = self.resources.sweep.position(ticket) or 1
             with chat.cond:
-                s["stress"] = {"state": "queued", "run": run["id"], "label": f"queued, position {pos}"}
+                if (s.get("stress") or {}).get("state") not in ("running", "stopping"):         # a run in progress keeps its own state in the dock
+                    s["stress"] = {"state": "queued", "run": run["id"], "label": f"queued, position {pos}"}
                 chat.put_card(cards.results(run["card"], run, book, self._overlay(book, run, snap, None, queued=True), "", None, None, "queued", self._progress(run, 0, 0, "queued")))
             chat.emit("job", job={"id": run["id"], "kind": "tests", "state": "queued", "label": f"Run {words.plural(len(case_ids), 'test')}", "done": 0, "total": run["conditions"], "position": pos})
             self._say_blocked(chat, words.tests_queued(pos), state="waiting", ticket={"id": ticket.id, "position": pos, "cancel": {"type": "cancel_queued", "args": {"ticket": ticket.id}}})
@@ -1079,7 +1099,6 @@ class Engine:
         return next((c for c in cands if c in run["case_ids"]), None)
 
     def _sweep_thread(self, chat: Chat, ticket, run: dict, groups: list[dict], snap: dict, machine: dict, cancel: threading.Event) -> None:
-        chat.job_started()
         s, book = chat.s, chat.book
         results, acc = [], {}
         done = tries_done = 0
@@ -1099,6 +1118,7 @@ class Engine:
                 chat.put_card(cards.results(run["card"], run, book, self._overlay(book, run, snap, 0, order=order), "", None, None, "running", self._progress(run, 0, 0, "starting")))
             chat.emit("job", job={"id": run["id"], "kind": "tests", "state": "running", "label": f"Run {words.plural(len(run['case_ids']), 'test')}", "done": 0, "total": run["conditions"]})
             self._dock(chat)
+            chat.save()                                              # so a crash from here on is found, and shown as interrupted, after a restart
             for g in groups:
                 def on_result(cond, r, d, total, g=g):
                     nonlocal done, tries_done
@@ -1192,7 +1212,14 @@ class Engine:
                 ev.set()
             for t in list(chat.tickets.values()):
                 if t.lane == "plan":
+                    waiting = t.state == "queued"
                     self.resources.plan.cancel(t.id)
+                    if waiting:                                      # a plan still in the line never starts: say it was stopped
+                        chat.tickets.pop(t.id, None)
+                        if (chat.s.get("ai") or {}).get("state") == "queued":
+                            chat.s["ai"]["state"] = "stopped"
+                            chat.put_card(cards.improve(chat.s["ai"]))
+                            chat.message("assistant", words.ai_stopped())
         if job in ("tests", "all"):
             for key, ev in list(chat.cancel.items()):
                 if key.startswith("r"):
@@ -1218,13 +1245,29 @@ class Engine:
         self._dock(chat)
 
     def _cancel_queued(self, chat: Chat, ticket_id: str | None) -> None:
+        """The x on an 'Up next' chip: the waiting job is withdrawn, and whatever card was waiting for it says so."""
+        ticket = chat.tickets.get(str(ticket_id))
+        was_waiting = ticket is not None and ticket.state == "queued"
         for lane in (self.resources.plan, self.resources.sweep):
             if lane.cancel(str(ticket_id)):
                 chat.tickets.pop(str(ticket_id), None)
                 break
         for cid, card in list(chat.view.cards.items()):
             if card["type"] == "blocked" and (card.get("ticket") or {}).get("id") == ticket_id:
-                chat.card_patch(cid, {"state": "blocked", "ticket": None})
+                chat.card_patch(cid, {"state": "blocked", "ticket": None, "title": words.TITLE["blocked"]})
+        if not was_waiting:
+            return
+        if ticket.lane == "sweep" and getattr(ticket, "card", None) in chat.view.cards:
+            run = chat.view.cards[ticket.card]
+            chat.card_patch(ticket.card, {"state": "cancelled", "summary": words.queued_cancelled(), "actions": []})
+            chat.emit("job", job={"id": run["run_id"], "kind": "tests", "state": "cancelled", "label": ticket.label, "done": 0, "total": run["progress"]["total"]})
+            if (chat.s.get("stress") or {}).get("run") == run["run_id"]:
+                chat.s["stress"] = {"state": "cancelled", "run": run["run_id"], "label": ""}
+            chat.cancel.pop(run["run_id"], None)
+        elif ticket.lane == "plan" and (chat.s.get("ai") or {}).get("state") == "queued":
+            chat.s["ai"]["state"] = "stopped"
+            chat.put_card(cards.improve(chat.s["ai"]))
+            chat.message("assistant", words.ai_stopped())
 
     # ================================================================ the AI planner
     def _start_ai(self, chat: Chat, text: str, with_draft: bool, gen: int) -> None:
@@ -1235,6 +1278,7 @@ class Engine:
         def start(ticket):
             ai["state"] = "running"
             chat.put_card(cards.improve(ai))
+            chat.job_started()
             threading.Thread(target=self._ai_thread, args=(chat, ticket, text, cancel, gen), daemon=True, name="chat-ai").start()
 
         snap = self.budget.snapshot()
@@ -1249,7 +1293,6 @@ class Engine:
         self._dock(chat)
 
     def _ai_thread(self, chat: Chat, ticket, text: str, cancel: threading.Event, gen: int) -> None:
-        chat.job_started()
         ai = chat.s["ai"]
         t0, stop_tick = time.time(), threading.Event()
         info = {"phase": "Starting", "chars": 0, "tail": ""}
@@ -1429,7 +1472,7 @@ class Engine:
             snapshot = chat.view.snapshot()
             out = {"id": chat.id, "title": chat.title, "seq": chat.seq, "created": chat.created, "updated": chat.updated, "phase": "ready" if book is not None else "empty",
                    "ai": {k: v for k, v in (s.get("ai") or {}).items() if k not in ("raw_plan", "pending")}, "budget": self.budget.snapshot(), "resources": self.resources.snapshot(),
-                   "limits": snapshot["limits"], "view": {"cards": snapshot["cards"], "chips": snapshot["chips"], "dock": snapshot["dock"]}}
+                   "limits": snapshot["limits"], "view": {"messages": snapshot["messages"], "cards": snapshot["cards"], "chips": snapshot["chips"], "dock": snapshot["dock"]}}
             if book is None:
                 return {**out, "cases": [], "plan": None, "proposals": [], "results": [], "sheet": None}
             props = s.get("proposals") or []

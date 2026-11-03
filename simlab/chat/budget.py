@@ -107,7 +107,8 @@ class Budget:
         used = self.used_today()
         left, limit, err = None, DAILY_LIMIT, ""
         if configured:
-            self._fetch(force)
+            if setting != "never":                                       # switched off means no request of any kind, not even the usage read
+                self._fetch(force)
             if self._cache:
                 _, key_left, key_limit, used_then, err = self._cache
                 if key_limit:

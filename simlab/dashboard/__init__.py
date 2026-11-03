@@ -2,9 +2,10 @@
 from pathlib import Path
 
 from .build_router import router as build_router
+from .chat_router import router as chat_router
 from .goal_router import router as goal_router
 from .router import det_jobs, jobs, router, runner
 
 STATIC = Path(__file__).parent / "static"
 
-__all__ = ["STATIC", "build_router", "goal_router", "det_jobs", "jobs", "router", "runner"]
+__all__ = ["STATIC", "build_router", "chat_router", "goal_router", "det_jobs", "jobs", "router", "runner"]

@@ -167,7 +167,7 @@ HAZARD_WORDS = [
     (r"lag|laggy|laggier|delay|delays|latency|slow commands|slow link|slow wi-?fi|command delay", ["lag"]),
 ]
 FAULT_WORDS = [
-    (r"motor (?:out|fail\w*|dead|dies|stops?|failure)|(?:a |one )?motor fail\w*|engine (?:out|fail\w*)", ["thruster_out", "rotor_out", "left_motor_dead"]),
+    (r"motor (?:out|fail\w*|dead|dies|stops?|failure)|(?:a |one )?motor fail\w*|engine (?:out|fail\w*)|(?:dead|broken|failed|failing) (?:left |right )?motors?", ["thruster_out", "rotor_out", "left_motor_dead"]),
     (r"thrusters?(?: out| fail\w*| dead| failure)?", ["thruster_out"]),
     (r"rotors? (?:out|fail\w*|dead|stops?)|rotor", ["rotor_out"]),
     (r"weak motors?|worn motors?|weak battery|tired motors?", ["weak_motors"]),
@@ -215,7 +215,7 @@ UNSUPPORTED = [
     (r"drop(?:ping)? (?:a |the |some )?(?:parcel|package|payload|load|supplies|bomb|cargo)|deliver\w*|parcel|package delivery|airdrop|release (?:the )?payload", "payload_drop"),
     (r"follow(?:ing)? (?:a |the )?(?:person|swimmer|moving)|moving (?:person|target|swimmer)|chase|track(?:ing)? (?:a |the )?(?:person|target)", "follow"),
 ]
-NEGATION = re.compile(r"(?:\bwithout|\bnot|\bignore|\bskip|\bforget|\bexcept|\bavoid)\s+(?:\w+\s+){0,2}$")
+NEGATION = re.compile(r"(?:\bwithout|\bno|\bnot|\bignore|\bskip|\bforget|\bexcept|\bavoid)\s+(?:\w+\s+){0,2}$")
 
 JOB_CUES = {
     "pipe_d": re.compile(r"pipe|pipes|tunnel|culvert|drain|diameter|wide|width|across|bore|narrow"),
@@ -235,6 +235,7 @@ RE_TRAIN = re.compile(r"\b(train|training|learn|detector|reinforcement|neural|fi
 RE_TEST = re.compile(r"\b(test|tests|testing|stress(?:[- ]?test)?|break it|how tough|how strong|how robust|run (?:all|everything|them|the tests?|it)|try everything|benchmark|check everything|run)\b")
 RE_WATCH = re.compile(r"\b(watch|show|play|simulate|animate|demo|demonstrate|replay|see it|look at|run it live|run a demo)\b")
 STRONG_TEST = re.compile(r"\b(how tough|how strong|how robust|stress|break it|run all|run everything|check everything)\b")
+RE_WATCH_FIRST = re.compile(r"^(?:please |can you |could you |let'?s |i want to |i'?d like to |go ahead and )?(?:watch|show|play|simulate|demo|demonstrate|replay|animate)\b")
 RE_WORST = re.compile(r"\b(worst|roughest|toughest|hardest|extreme|most severe|harshest|severe)\b")
 RE_WEAKEST = re.compile(r"\b(weakest|weak spot|where it fails|failing one|the one that failed)\b")
 RE_UNDO = re.compile(r"^(?:please )?(?:undo|take that back|revert|go back|put it back|oops)(?: (?:that|it|the last (?:one|edit|change)))?[.!]*$")
@@ -245,7 +246,7 @@ RE_CHITCHAT = re.compile(r"^(?:hi|hello|hey|thanks|thank you|ok|okay|cool|great|
 RE_HELP = re.compile(r"\b(help|what can you do|how do i use|commands)\b")
 
 QUESTIONS = [
-    ("limits", re.compile(r"what (?:didn'?t|did not|can'?t|cannot|don'?t|do not) (?:you |it |we |the simulator )?(?:test|simulate|do|cover)|what is(?:n'?t| not) tested|not tested|limitations?|what are the limits|what can'?t you|what are you not testing")),
+    ("limits", re.compile(r"what (?:can|do|did|will) (?:you|it|we|the simulator) not (?:test|simulate|cover)|what (?:didn'?t|did not|can'?t|cannot|don'?t|do not) (?:you |it |we |the simulator )?(?:test|simulate|do|cover)|what is(?:n'?t| not) tested|not tested|limitations?|what are the limits|what can'?t you|what are you not testing")),
     ("why_fail", re.compile(r"\bwhy\b.*\b(fail\w*|break\w*|crash\w*|sink|sank|capsiz\w*|flip\w*|tip\w*|stall\w*|stuck|stop\w*|struggl\w*|lose|lost|miss\w*|below)\b|what (?:went wrong|failed|broke|happened)|what'?s (?:wrong|the weakest)|where does it (?:fail|break)|which (?:test |one )?(?:failed|fails|is weakest)")),
     ("what_means", re.compile(r"what does .* mean|\bexplain\b|how do i read|what is (?:a |the )?(?:try|tries|bar|level|autopilot|result|results)\b|what are (?:the )?tries|meaning of|what do (?:these|the) (?:numbers|results|cells) mean")),
     ("cost", re.compile(r"how long (?:will|does|would)|how long is|how much time|how many (?:tries|tests|conditions|runs)|what will (?:it|this) cost|how long.*\b(?:take|run)\b")),
@@ -355,9 +356,9 @@ def wet_words(text: str, platform: str, mode: str) -> float | None:
         if re.search(r"\bdry\b", text):
             return 0.0
         return None
-    if re.search(r"\b(?:floor|pipe|inside|ground)\s+(?:is\s+)?wet\b|\b(?:make it|set it to|it'?s|it is)\s+wet\b|\bwet (?:pipe|inside|conditions)\b", text):
+    if re.search(r"\b(?:floor|pipe|inside|ground)\s+(?:is\s+)?wet\b|\b(?:make it|set it to|it'?s|it is)\s+wet\b|\bwet (?:pipe|inside|conditions|floor|ground)\b", text):
         return 1.0
-    if re.search(r"\b(?:floor|pipe|inside|ground)\s+(?:is\s+)?dry\b|\b(?:make it|set it to|it'?s|it is)\s+dry\b|\bdry (?:pipe|inside|conditions)\b", text):
+    if re.search(r"\b(?:floor|pipe|inside|ground)\s+(?:is\s+)?dry\b|\b(?:make it|set it to|it'?s|it is)\s+dry\b|\bdry (?:pipe|inside|conditions|floor|ground)\b", text):
         return 0.0
     return None
 
@@ -775,6 +776,18 @@ def parse(text: str | None = None, action: dict | None = None, ctx: ParseCtx | N
         return Intent("stop", "verb", 0.95, {"type": "stop", "args": {"job": "all"}}, read_as="stop everything that is running")
     if RE_CHITCHAT.match(t):
         return Intent("help", "fallback", 0.5, {"type": "answer", "args": {"topic": "help"}}, topic="help")
+
+    if ctx.has_plan and hits and n_words >= 4 and hits[0]["score"] >= 2:          # clearly another kind of job: ask, never edit this one into it
+        from ..goals.catalogue import all_goals
+        platform = all_goals()[hits[0]["goal"]].platform
+        if platform != ctx.platform:
+            return Intent("confirm_new", "new_job", 0.7, {"type": "new_chat", "args": {"text": raw}}, read_as="a different job", meta={"goal": hits[0]["goal"], "platform_differs": True})
+    if ctx.has_plan and RE_WATCH_FIRST.match(t):                         # "simulate wind 15 m/s", "show me waves of 0.9 m": watching at that condition, not editing the test
+        a, ra = _watch_args(t, ctx)
+        if a["conditions"] or a["case"]:
+            return Intent("watch", "verb", 0.85, {"type": "watch", "args": a}, read_as=ra)
+    if not ctx.has_plan and not hits and n_words <= 6 and (any(find_targets(t, p) for p in menu.PLATFORMS) or REL_UP.search(t) or REL_DOWN.search(t) or RE_REMOVE.search(t)):
+        return Intent("blocked", "fallback", 0.6, {"type": "answer", "args": {"topic": "no_plan"}}, topic="no_plan", issues=[words.blocked_no_plan()])
 
     ep = EditParse()
     if ctx.has_plan:

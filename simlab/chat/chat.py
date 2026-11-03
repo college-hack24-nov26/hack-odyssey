@@ -131,7 +131,7 @@ class Chat:
         assert type_ in EVENT_TYPES, type_
         with self.cond:
             self.seq += 1
-            ev = {"seq": self.seq, "ts": round(time.time(), 3), "type": type_, **payload}
+            ev = {"seq": self.seq, "ts": round(time.time(), 3), "type": type_, **copy.deepcopy(payload)}      # copied: a card built from live state must not change after it was logged
             self.events.append(ev)
             self.view.apply(ev)
             self.updated = ev["ts"]

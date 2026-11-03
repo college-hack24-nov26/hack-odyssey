@@ -116,8 +116,11 @@ def draft_plan(platform: str, params: dict, summary: str, why: str = "", assumpt
             lo, hi = h["range"]
             levels = ensure_level(levels, clamp(float(params[key]), lo, hi)[0], levels[0] > levels[-1])[:MAX_LEVELS]
         hazards.append({"id": hid, "levels": levels, "ask": None})
+    task_params = dict(cat.get("task_params") or {})
+    if "range_m" in task_params and params.get("range_m") is not None:      # the test course is as long as the job says, not the catalogue's stock 100 m
+        task_params["range_m"] = _r(clamp(float(params["range_m"]), *menu.TASK_PARAMS[m["task"]]["range_m"])[0])
     return {"understanding": {"summary": summary, "platform": platform, "why": why, "assumptions": list(assumptions or [])}, "questions": [], "scenarios": [],
-            "params": dict(params), "requirements": [], "task": {"preset": m["task"], "params": dict(cat.get("task_params") or {})},
+            "params": dict(params), "requirements": [], "task": {"preset": m["task"], "params": task_params},
             "stress": {"hazards": hazards, "faults": list(m["faults"])}, "designs": [], "issues": []}
 
 
@@ -519,11 +522,11 @@ class CaseBook:
         levels = normalise_levels([float(v) for v in op.get("levels") or []], base, out.clamps, s["title"])
         if levels == s["levels"]:
             return self._fail(out, op, words.already_there(f"The {s['title']} levels"))
+        before = list(s["levels"])
         s["levels"] = levels
         self._touch(c, "levels")
-        same_but_top = levels[:-1] == [v for v in (op.get("before") or [])][:-1] if op.get("before") else False
-        note = words.levels_top_changed(s["title"], old_top, levels[-1], s["unit"]) if (same_but_top or len(levels) == len(op.get("before") or [])) \
-            else words.levels_set(s["title"], levels, s["unit"])
+        top_only = len(levels) == len(before) and levels[:-1] == before[:-1]               # only the most severe level moved: say it that way
+        note = words.levels_top_changed(s["title"], old_top, levels[-1], s["unit"]) if top_only else words.levels_set(s["title"], levels, s["unit"])
         return self._ok(out, {"op": "set_levels", "case": c["id"], "levels": levels}, note, c["id"])
 
     def _op_set_ask(self, st: _State, op: dict, out: Outcome) -> bool:
@@ -601,15 +604,17 @@ class CaseBook:
         lo, hi, unit, _ = menu.PARAMS[name]
         x, side = clamp(float(op["value"]), lo, hi)
         if side:
-            out.clamps.append(words.clamp_note(name.replace("_", " "), op["value"], x, unit if unit != "0/1" else "", side))
+            out.clamps.append(words.clamp_note(words.PARAM_LABEL.get(name, name), op["value"], x, unit if unit != "0/1" else "", side))
         x = int(round(x)) if name in INT_PARAMS else _r(x)
         if st.params.get(name) == x:
             return self._fail(out, op, words.already_there(f"The job's {name.replace('_', ' ')}"))
         st.params[name] = x
         st.touched_params.add(name)
+        if name == "range_m" and "range_m" in menu.TASK_PARAMS.get(st.task["preset"], {}) and "range_m" not in st.touched_task:
+            st.task["params"]["range_m"] = x                                  # the test course follows the job unless the person set the course by itself
         self._refresh_param_asks(st)
         out.job_changed = True
-        return self._ok(out, {"op": "set_job_number", "name": name, "value": x}, words.job_number_set(name.replace("_", " "), x, unit if unit != "0/1" else ""),
+        return self._ok(out, {"op": "set_job_number", "name": name, "value": x}, words.job_number_set(words.PARAM_LABEL.get(name, name).lower(), x, unit if unit != "0/1" else ""),
                         *[c["id"] for c in st.cases if c["kind"] == "sweep" and c["sweep"]["ask_param"] == name])
 
     def _op_remove(self, st: _State, op: dict, out: Outcome) -> bool:

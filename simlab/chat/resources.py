@@ -19,6 +19,7 @@ class Ticket:
         self.lane, self.owner, self.label = lane, owner, label
         self.start, self.on_cancel, self.on_preempt = start, on_cancel, on_preempt
         self.state = "queued"                     # queued | running | done | cancelled
+        self.card: str | None = None              # the card waiting for this ticket (the engine sets it), so withdrawing the ticket can say so there
         self.created = time.time()
 
     def public(self, position: int | None = None) -> dict:

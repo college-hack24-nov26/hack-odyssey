@@ -92,7 +92,7 @@ def build_sheet(req: BuildReq):
     if b is None:
         raise HTTPException(422, "that is not a valid build: " + "; ".join(f"{i.field}: {i.msg}" for i in issues[:3]))
     sheet = make_sheet({"build": req.build}, goal.to_dict(), _owned(req.owned))
-    name = f"{time.strftime('%Y%m%d_%H%M%S')}_sheet_{goal.id}"
+    name = f"{time.strftime('%Y%m%d_%H%M%S')}_sheet_{goal.id}_{uuid.uuid4().hex[:6]}"      # the suffix: two sheets in one second must not share a folder
     out = ROOT / "runs" / "reports" / name
     out.mkdir(parents=True, exist_ok=True)
     (out / "sheet.html").write_text(render_sheet(sheet), encoding="utf-8")

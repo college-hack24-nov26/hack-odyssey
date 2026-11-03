@@ -20,7 +20,7 @@ from ..brain.sim import MAPS_DIR, ROOT, SimManager, list_maps
 from ..core.mapspec import load_map
 from ..core.profiles import PRESETS
 from ..hardware.serial_rover import RoverLinkError, list_ports
-from simlab.dashboard import STATIC as LAB_STATIC, build_router, goal_router, det_jobs as lab_det_jobs, jobs as lab_jobs, router as lab_router, runner as lab_runner
+from simlab.dashboard import STATIC as LAB_STATIC, build_router, chat_router, goal_router, det_jobs as lab_det_jobs, jobs as lab_jobs, router as lab_router, runner as lab_runner
 
 STATIC = Path(__file__).parent / "static"
 MODELS = ROOT / "models"
@@ -31,6 +31,7 @@ app = FastAPI(title="sewerbot")
 app.include_router(lab_router)
 app.include_router(build_router)
 app.include_router(goal_router)
+app.include_router(chat_router)         # /chat and /api/chat/*: also before the catch-all routes below
 app.mount("/lab-static", StaticFiles(directory=str(LAB_STATIC)), name="lab-static")
 
 

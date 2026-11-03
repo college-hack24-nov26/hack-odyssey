@@ -22,3 +22,8 @@ config/inventory.yaml
 
 # the OpenRouter key (never commit it)
 config/llm.json
+
+# the chat page: saved chats, its settings and saved test suites
+runs/chats/
+config/chat.json
+config/cases/

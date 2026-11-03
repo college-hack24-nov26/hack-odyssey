@@ -14,12 +14,13 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import struct
 from typing import Iterable, Mapping
 
 PROTOCOL_VERSION = 2
 HOST = "127.0.0.1"
-PORT = 8770
+PORT = int(os.environ.get("SIMLAB_WEBOTS_PORT", 8770))       # the override lets a demo dashboard run beside a test run (both bind this port at start-up)
 MAX_HEADER = 1 << 20
 MAX_PAYLOAD = 64 << 20
 

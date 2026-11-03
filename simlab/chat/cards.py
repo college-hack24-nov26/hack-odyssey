@@ -135,6 +135,8 @@ def _bar_owner(book) -> str:
 def results(cid: str, run: dict, book, overlay: dict | None, headline: str, weakest: dict | None, report: dict | None, state: str, progress: dict, chips: list | None = None) -> dict:
     matrix = C.results_matrix(book, overlay, ids=run["case_ids"])
     n_nt = n_not_tested(book)
+    if not headline and state in ("running", "queued"):
+        headline = words.results_running(progress) if state == "running" else "Waiting for another test run to finish."
     return _card(cid, "results", state, headline, run_id=run["id"], started=run["started"], finished=run.get("finished"), seconds=run.get("seconds"), progress=progress, matrix=matrix,
                  headline=headline, weakest=weakest, bar_text=matrix["bar_text"], statement=STATEMENT, not_tested=book.not_tested_items(), limit_line=words.limit_line(n_nt),
                  report=report, stale=any((book.get(i) or {}).get("stale") for i in run["case_ids"]), case_ids=run["case_ids"], what_this_means=words.answer_what_means(matrix["bar_text"]),

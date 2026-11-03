@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0d1218">
+<title>simlab</title>
+<script>
+/* theme bootstrap: runs before the first paint so there is no flash (a manual choice wins over the system setting) */
+(function () {
+  try {
+    var t = localStorage.getItem("simlab.chat.theme");
+    if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+  } catch (e) { /* storage blocked: follow the system setting */ }
+})();
+</script>
+<link rel="stylesheet" href="/lab-static/chat.css">
+<link rel="stylesheet" href="/lab-static/chat-cards.css">
+</head>
+<body data-state="empty">
+<a class="ch-skip" href="#ch-input">Skip to the message box</a>
+
+<div class="ch-app" id="ch-app">
+  <header class="ch-top" id="ch-top">
+    <button type="button" class="ch-iconbtn" id="ch-history-btn" aria-label="Recent chats" aria-haspopup="dialog" aria-expanded="false" aria-controls="ch-drawer"></button>
+    <a class="ch-wordmark" href="/chat" aria-label="simlab, new chat">simlab</a>
+    <input class="ch-title" id="ch-title" type="text" value="New chat" maxlength="80" aria-label="Chat title" spellcheck="false" autocomplete="off">
+    <span class="ch-spacer"></span>
+    <button type="button" class="ch-btn ch-btn--ghost" id="ch-overview-btn" hidden></button>
+    <span class="ch-aichip" id="ch-aichip" hidden></span>
+    <button type="button" class="ch-iconbtn" id="ch-theme-btn" aria-label="Switch colour theme"></button>
+    <div class="ch-menuwrap">
+      <button type="button" class="ch-iconbtn" id="ch-menu-btn" aria-label="Menu" aria-haspopup="menu" aria-expanded="false" aria-controls="ch-menu"></button>
+      <div class="ch-pop ch-menu" id="ch-menu" role="menu" hidden></div>
+      <div class="ch-pop ch-settings" id="ch-settings" role="dialog" aria-label="Settings" hidden></div>
+    </div>
+  </header>
+
+  <div class="ch-reconnect" id="ch-reconnect" role="status" hidden></div>
+
+  <div class="ch-body" id="ch-body">
+    <section class="ch-hero" id="ch-hero">
+      <h1 class="ch-hero-h" id="ch-hero-h">What do you want to build and test?</h1>
+      <p class="ch-hero-p" id="ch-hero-p">Describe a job. I will design a machine, test it in simulation, and tell you what I could not test.</p>
+    </section>
+
+    <div class="ch-scroll" id="ch-scroll">
+      <div class="ch-col">
+        <div class="ch-stream" id="ch-stream" role="log" aria-label="Conversation" aria-live="off"></div>
+      </div>
+    </div>
+    <button type="button" class="ch-jump" id="ch-jump" hidden></button>
+
+    <footer class="ch-foot" id="ch-foot">
+      <div class="ch-col ch-foot-col">
+        <section class="ch-dock" id="ch-dock" aria-label="Progress" hidden>
+          <div class="ch-dock-row">
+            <div class="ch-dock-slot" id="ch-dock-slot" aria-label="Simulation thumbnail"></div>
+            <button type="button" class="ch-dock-main" id="ch-dock-main" aria-expanded="false" aria-controls="ch-dock-steps">
+              <span class="ch-dock-dot" aria-hidden="true"></span>
+              <span class="ch-dock-text" id="ch-dock-text"></span>
+              <span class="ch-dock-time ch-mono" id="ch-dock-time"></span>
+              <span class="ch-dock-chev" id="ch-dock-chev" aria-hidden="true"></span>
+            </button>
+            <button type="button" class="ch-btn ch-btn--stop" id="ch-dock-stop" hidden></button>
+          </div>
+          <div class="ch-dock-ai" id="ch-dock-ai" hidden></div>
+          <div class="ch-prog" id="ch-dock-prog" hidden><i></i></div>
+          <ol class="ch-dock-steps" id="ch-dock-steps" hidden></ol>
+        </section>
+
+        <div class="ch-upnext" id="ch-upnext" hidden></div>
+        <div class="ch-chips" id="ch-chips" role="group" aria-label="Suggestions"></div>
+        <div class="ch-chips ch-chips--empty" id="ch-empty-chips" role="group" aria-label="Examples"></div>
+        <button type="button" class="ch-limits" id="ch-limits" aria-label="Limits of this tool. Open what I can't test."></button>
+
+        <form class="ch-composer" id="ch-composer" autocomplete="off">
+          <label class="ch-sr" for="ch-input">Message</label>
+          <textarea class="ch-input" id="ch-input" rows="2" maxlength="2000" placeholder="e.g. a boat that reaches a person 150 m away in 1 m waves" enterkeyhint="send"></textarea>
+          <div class="ch-composer-row">
+            <span class="ch-composer-hint" id="ch-hint">Enter to send, Shift+Enter for a new line</span>
+            <button type="button" class="ch-send ch-send--stop" id="ch-stop" hidden aria-label="Stop"></button>
+            <button type="submit" class="ch-send" id="ch-send" aria-label="Send message" disabled></button>
+          </div>
+          <div class="ch-pop ch-stopmenu" id="ch-stopmenu" role="menu" hidden></div>
+        </form>
+        <p class="ch-caption" id="ch-caption">Simulation only, with a simple built-in autopilot. Results come from a computer model, not a real machine.</p>
+      </div>
+    </footer>
+  </div>
+
+  <div class="ch-scrim" id="ch-scrim" hidden></div>
+  <aside class="ch-drawer" id="ch-drawer" role="dialog" aria-modal="true" aria-label="Recent chats" hidden>
+    <div class="ch-drawer-h">
+      <h2>Recent chats</h2>
+      <button type="button" class="ch-iconbtn" id="ch-drawer-close" aria-label="Close recent chats"></button>
+    </div>
+    <button type="button" class="ch-btn ch-btn--primary ch-drawer-new" id="ch-drawer-new"></button>
+    <p class="ch-drawer-empty">Coming soon. For now the chat you were last in reopens when you come back.</p>
+  </aside>
+
+  <div class="ch-toasts" id="ch-toasts" role="status" aria-live="polite"></div>
+  <div class="ch-sr" id="ch-announcer" role="status" aria-live="polite" aria-atomic="true"></div>
+</div>
+
+<noscript><p class="ch-noscript">This page needs JavaScript. The earlier screens still work without the chat: open <a href="/">the workbench</a>.</p></noscript>
+
+<script src="/lab-static/vendor/three.min.js"></script>
+<script src="/lab-static/env.js"></script>
+<script src="/lab-static/models/kit.js"></script>
+<script src="/lab-static/models/boat.js"></script>
+<script src="/lab-static/models/rover.js"></script>
+<script src="/lab-static/models/drone.js"></script>
+<script src="/lab-static/models/props.js"></script>
+<script src="/lab-static/viewer3d.js"></script>
+<script src="/lab-static/chat-core.js"></script>
+<script src="/lab-static/views.js"></script>
+<script src="/lab-static/chat-cards.js"></script>
+<script src="/lab-static/chat-fixtures.js"></script>
+<script src="/lab-static/chat-sheet.js"></script>
+<script src="/lab-static/chat-live.js"></script>
+<script src="/lab-static/chat-mock.js"></script>
+</body>
+</html>
