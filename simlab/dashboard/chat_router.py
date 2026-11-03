@@ -84,6 +84,12 @@ def latest():
     return {"id": chat.id, "title": chat.title, "seq": chat.seq, **first}
 
 
+@router.get("/api/chat/list")
+def chat_list(limit: int = Query(100, ge=1, le=500)):
+    """The sidebar's list: [{id, title, updated, seq}] newest first, read from the per-chat store (and the chats open in memory). Read-only; no events are loaded."""
+    return {"chats": engine().list()[:limit]}
+
+
 @router.get("/api/chat/{cid}/events")
 def events(cid: str, after: int = Query(0, ge=0), wait: float = Query(0.0, ge=0.0, le=MAX_WAIT)):
     """Long-poll. {"events": [...], "last": N, "more": bool, "reset": bool?}. `more` means the page was cut: ask again at once with after=last. An empty list after `wait`

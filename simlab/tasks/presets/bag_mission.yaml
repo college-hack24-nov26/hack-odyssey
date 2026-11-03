@@ -1,0 +1,9 @@
+name: bag_mission
+task: bag_mission
+description: Bags and a goal box on a tiled floor, seen only through the rover's 96 x 96 camera and gyro; the mission (follow, orbit, go to, stop at) is data run by simlab.missions.
+world: {environment: tile_floor}
+params: {}
+reward: {done: 10.0, failed: -5.0, time: -0.02, collision: -0.5}
+episode: {max_time: 400, policy_hz: 40}
+randomize: {}
+labels: [bag_a, bag_b, box]

@@ -1,5 +1,5 @@
 /* chat-cards.css: the card bodies, the Details sheet, the live view and Focus mode of the chat page.
-   Uses the --ch-* tokens defined in chat.css (dark and light). Classes: .ch-v-* (views and card bodies), .ch-sh-* (Details sheet), .ch-lv-* (live view).
+   Uses the --ch-* tokens defined in chat.css (dark and light). Classes: .ch-v-* (views and card bodies), .ch-sh-* (Plan/Tests/Parts panes), .ch-lv-* (live view).
    No bare element selectors, so nothing here leaks into the rest of the page. */
 :root {
   --ch-v-mono: ui-monospace, "Cascadia Mono", Consolas, "SF Mono", monospace;
@@ -41,7 +41,7 @@
 .ch-v-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 1px solid var(--ch-line); border-radius: 8px;
   background: var(--ch-raised); color: var(--ch-text); font: 600 13px/1 var(--ch-font, system-ui, "Segoe UI", sans-serif); cursor: pointer; text-decoration: none; transition: border-color .15s, background .15s; }
 .ch-v-btn:hover { border-color: var(--ch-accent); }
-.ch-v-btn:focus-visible, .ch-v-numchip:focus-visible, .ch-v-seg-b:focus-visible, .ch-v-disc:focus-visible, .ch-v-cell:focus-visible, .ch-sh-tab:focus-visible, .ch-sh-close:focus-visible, .ch-v-chip--btn:focus-visible,
+.ch-v-btn:focus-visible, .ch-v-numchip:focus-visible, .ch-v-seg-b:focus-visible, .ch-v-disc:focus-visible, .ch-v-cell:focus-visible, .ch-v-chip--btn:focus-visible,
 .ch-v-det summary:focus-visible, .ch-v-in:focus-visible, .ch-v-range-in:focus-visible { outline: 2px solid var(--ch-focus, var(--ch-accent)); outline-offset: 2px; }
 .ch-v-btn--primary { background: var(--ch-accent); border-color: var(--ch-accent); color: var(--ch-on-accent, #fff); }
 .ch-v-btn--primary:hover { filter: brightness(1.08); }
@@ -218,6 +218,9 @@ button.ch-v-cell:hover { border-color: var(--ch-accent); }
 .ch-lv-view { position: relative; width: 100%; height: clamp(220px, 34vh, 380px); border-radius: 12px; overflow: hidden; background: var(--ch-v-stage); border: 1px solid var(--ch-line); }
 @media (max-width: 639px) { .ch-lv-view { height: auto; aspect-ratio: 4 / 3; max-height: 45vh; } }
 .ch-lv-slot { position: absolute; inset: 0; }
+.ch-lv-view--pane { height: auto; aspect-ratio: 4 / 3; max-height: 52vh; }
+.ch-lv-pane-stage { position: absolute; inset: 0; }
+.ch-lv-pane-stage .ch-lv-host { position: absolute; inset: 0; }
 .ch-lv-host { position: relative; width: 100%; height: 100%; background: var(--ch-v-stage); }
 .ch-lv-host canvas { display: block; width: 100%; height: 100%; }
 .ch-lv-host.ch-lv-thumb { width: 96px; height: 60px; border-radius: 8px; overflow: hidden; cursor: pointer; border: 1px solid var(--ch-line); }
@@ -244,7 +247,7 @@ button.ch-v-cell:hover { border-color: var(--ch-accent); }
 .ch-lv-slider output { font-size: 12px; text-align: right; }
 
 /* ---------------------------------------------------------------- Focus mode (full screen) */
-body.ch-lv-lock, body.ch-sh-lock { overflow: hidden; }
+body.ch-lv-lock { overflow: hidden; }
 .ch-lv-focus { position: fixed; inset: 0; z-index: 1000; display: grid; grid-template-rows: minmax(0, 1fr) auto; background: var(--ch-bg); color: var(--ch-text); outline: none; }
 .ch-lv-fmain { display: grid; grid-template-columns: minmax(0, 1fr) 320px; min-height: 0; }
 .ch-lv-stage { position: relative; background: var(--ch-v-stage); min-height: 0; }
@@ -264,27 +267,8 @@ body.ch-lv-lock, body.ch-sh-lock { overflow: hidden; }
 }
 .ch-lv-booth { position: fixed; left: 0; top: 0; opacity: 0; pointer-events: none; z-index: -1; overflow: hidden; }
 
-/* ---------------------------------------------------------------- Details sheet */
-.ch-sh-scrim { position: fixed; inset: 0; z-index: 890; background: rgba(5, 8, 12, .5); opacity: 0; transition: opacity .32s; }
-.ch-sh-scrim.is-open { opacity: 1; }
-.ch-sh { position: fixed; top: 0; right: 0; bottom: 0; z-index: 900; width: 100vw; display: flex; flex-direction: column; background: var(--ch-bg); color: var(--ch-text);
-  border-left: 1px solid var(--ch-line); transform: translateX(100%); transition: transform .32s cubic-bezier(.2, .8, .2, 1); outline: none; }
-.ch-sh.is-open { transform: none; }
-.ch-sh[hidden], .ch-sh-scrim[hidden] { display: none; }
-@media (min-width: 640px) { .ch-sh { width: 80vw; } }
-@media (min-width: 900px) { .ch-sh { width: min(60vw, 960px); } }
-.ch-sh-head { display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 0 12px; border-bottom: 1px solid var(--ch-line); }
-.ch-sh-title { margin: 0; font-size: 15px; font-weight: 600; }
-.ch-sh-close { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 0 10px 0 4px; border: 0; background: none; color: var(--ch-text); font: 600 14px/1 inherit; cursor: pointer; border-radius: 8px; }
-.ch-sh-back { transform: rotate(180deg); }
-@media (min-width: 900px) { .ch-sh-head { flex-direction: row-reverse; justify-content: space-between; } .ch-sh-back { transform: none; } .ch-sh-close-t { display: none; } .ch-sh-close { padding: 0 8px; } }
-.ch-sh-tabs { display: flex; gap: 2px; padding: 0 12px; border-bottom: 1px solid var(--ch-line); overflow-x: auto; }
-.ch-sh-tab { min-height: 44px; padding: 0 14px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--ch-muted); font: 600 14px/1 inherit; cursor: pointer; white-space: nowrap; }
-.ch-sh-tab[aria-selected="true"] { color: var(--ch-text); border-bottom-color: var(--ch-accent); }
-.ch-sh-body { flex: 1; overflow: auto; min-height: 0; }
-.ch-sh-pane { padding: 16px; max-width: 900px; outline: none; }
-.ch-sh-pane[hidden] { display: none; }
-.ch-sh-foot { padding: 8px 16px calc(8px + env(safe-area-inset-bottom)); border-top: 1px solid var(--ch-line); background: var(--ch-surface); min-height: 36px; }
+/* ---------------------------------------------------------------- Plan, Tests and Parts panes (content of the right-hand dock; the frame is in chat.css) */
+.ch-sh-foot { margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--ch-line-soft); }
 .ch-sh-foot.is-stale { border-top: 2px dashed var(--ch-warn); }
 .ch-sh-empty { display: flex; gap: 10px; align-items: center; color: var(--ch-muted); padding: 24px 0; }
 .ch-sh-empty p { margin: 0; }
@@ -294,7 +278,6 @@ body.ch-lv-lock, body.ch-sh-lock { overflow: hidden; }
 .ch-sh-trow { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 12px; border: 1px solid var(--ch-line); border-radius: 12px; background: var(--ch-surface); }
 .ch-sh-trow.is-stale { border-style: dashed; border-color: var(--ch-accent); }
 .ch-sh-trow.is-stale .ch-v-mcells { opacity: .72; }
-@media (min-width: 900px) { .ch-sh-trow { grid-template-columns: minmax(0, 1fr) auto; } .ch-sh-edit { grid-column: 1 / -1; } }
 .ch-sh-tmain { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .ch-sh-ttitle { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; }
 .ch-sh-tbtns { display: flex; flex-wrap: wrap; gap: 6px; align-content: flex-start; }
@@ -308,8 +291,7 @@ body.ch-lv-lock, body.ch-sh-lock { overflow: hidden; }
 .ch-sh-cdet .ch-v-h4 { text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--ch-text); margin: 0; }
 .ch-sh-runs .ch-v-seg-b { flex: 0 1 auto; min-height: 36px; }
 @media (max-width: 639px) {
-  .ch-v-btn, .ch-v-in, .ch-sh-tab, .ch-v-seg-b, .ch-v-numchip { min-height: 44px; }
-  .ch-sh-pane { padding: 12px; }
+  .ch-v-btn, .ch-v-in, .ch-v-seg-b, .ch-v-numchip { min-height: 44px; }
   .ch-v-cell { min-width: 56px; }
   .ch-v-cell.is-compact { width: 32px; height: 32px; min-width: 32px; }
 }
@@ -318,8 +300,8 @@ body.ch-lv-lock, body.ch-sh-lock { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .ch-v-flash, .ch-v-dot, .ch-v-shimmer, .ch-v-bar.is-indet i { animation: none; }
   .ch-v-bar.is-indet i { left: 0; width: 100%; opacity: .35; }
-  .ch-sh, .ch-v-bar i, .ch-v-disc .ch-v-disc-ic, .ch-v-btn { transition: none; }
-  .ch-sh-scrim, .ch-v-snap-img, .ch-v-snap-c { transition: opacity .12s; }
+  .ch-v-bar i, .ch-v-disc .ch-v-disc-ic, .ch-v-btn { transition: none; }
+  .ch-v-snap-img, .ch-v-snap-c { transition: opacity .12s; }
 }
 @media (forced-colors: active) {
   .ch-v-nt, .ch-v-cell--not_tested, .ch-v-st--not_tested, .ch-v-snap.is-empty { background: Canvas; border: 1px dashed CanvasText; }
@@ -327,7 +309,7 @@ body.ch-lv-lock, body.ch-sh-lock { overflow: hidden; }
   .ch-v-bar { background: Canvas; border: 1px solid CanvasText; }
   .ch-v-bar i { background: Highlight; forced-color-adjust: none; }
   .ch-v-btn--primary { background: Highlight; color: HighlightText; border-color: Highlight; }
-  .ch-sh-tab[aria-selected="true"], .ch-v-seg-b.is-on, .ch-v-cell.is-sel { outline: 2px solid Highlight; }
+  .ch-v-seg-b.is-on, .ch-v-cell.is-sel { outline: 2px solid Highlight; }
   .ch-v-dot, .ch-v-ring { background: CanvasText; border-color: CanvasText; }
   .ch-v-mrow.is-stale .ch-v-cell, .ch-sh-trow.is-stale { border-style: dashed; opacity: 1; }
 }

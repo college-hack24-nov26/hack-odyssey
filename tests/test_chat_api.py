@@ -153,6 +153,25 @@ def test_latest_is_the_chat_to_open_and_carries_its_events(rig):
     assert c.get("/api/chat/latest").json()["id"] == a
 
 
+def test_the_chat_list_feeds_the_sidebar_newest_first_and_is_read_only(rig):
+    c, eng, tmp = rig
+    assert c.get("/api/chat/list").json() == {"chats": []}
+    a = new(c)
+    time.sleep(0.01)
+    b = new(c)
+    got = c.get("/api/chat/list").json()["chats"]
+    assert [x["id"] for x in got] == [b, a] and all(set(x) == {"id", "title", "updated", "seq"} for x in got)
+    c.post(f"/api/chat/{a}/send", json={"text": BOAT})
+    wait_idle(eng, a)
+    got = c.get("/api/chat/list").json()["chats"]
+    assert got[0]["id"] == a and got[0]["title"] != "New chat"                                  # the first message names the chat, and it moves to the top
+    assert len(c.get("/api/chat/list", params={"limit": 1}).json()["chats"]) == 1
+    assert c.get("/api/chat/list", params={"limit": 0}).status_code == 422
+    assert "decoy" not in c.get("/api/chat/list").json()                                          # not shadowed by the catch-all routes
+    assert c.post("/api/chat/list").status_code in (404, 405)                                     # nothing to write here
+    assert "events" not in got[0]
+
+
 def test_unknown_and_malformed_ids_are_404_and_bad_parameters_422(rig):
     c, eng, _ = rig
     for bad in ("0" * 12, "nope", "..%2F..", "A" * 12, "x" * 40):
@@ -434,7 +453,7 @@ def test_the_protocol_document_names_every_card_event_and_action_the_server_has(
     doc = (ROOT / "docs" / "CHAT_PROTOCOL.md").read_text(encoding="utf-8")
     for name in (*CARD_TYPES, *EVENT_TYPES, *intents.ACTION_TYPES, *intents.FORBIDDEN_ACTIONS):
         assert f"`{name}`" in doc or f'"{name}"' in doc, name
-    for fixed in ("/api/chat/capabilities", "/api/chat/new", "/api/chat/latest", "/events?after=", "/send", "/state", "long-poll", "202", "client_msg_id", "merge patch"):
+    for fixed in ("/api/chat/capabilities", "/api/chat/new", "/api/chat/latest", "/api/chat/list", "/events?after=", "/send", "/state", "long-poll", "202", "client_msg_id", "merge patch"):
         assert fixed in doc, fixed
     paths = {r.path for r in chat_router.router.routes}
-    assert paths == {"/chat", "/api/chat/capabilities", "/api/chat/new", "/api/chat/latest", "/api/chat/{cid}/events", "/api/chat/{cid}/send", "/api/chat/{cid}/state"}
+    assert paths == {"/chat", "/api/chat/capabilities", "/api/chat/new", "/api/chat/latest", "/api/chat/list", "/api/chat/{cid}/events", "/api/chat/{cid}/send", "/api/chat/{cid}/state"}

@@ -20,6 +20,7 @@ Transport is **HTTP long-poll**, not SSE and not WebSocket. A turn is two calls:
 | `GET /api/chat/capabilities` | What the page may offer (section 1.1). |
 | `POST /api/chat/new` | Make an empty chat: `{ "id": "<12 hex>", "seq": 4, "title": "New chat" }`. |
 | `GET /api/chat/latest` | The chat to open on page load: `{ "id": null }`, or `{ "id", "title", "seq", "events", "last", "more" }` (the same body as `events?after=0`). |
+| `GET /api/chat/list` | The sidebar's list, read-only: `{ "chats": [{ "id", "title", "updated", "seq" }] }`, newest first (`?limit=` 1 to 500, default 100). No events are loaded. |
 | `GET /api/chat/{id}/events?after=<seq>&wait=<seconds>` | Long-poll (section 1.2). |
 | `POST /api/chat/{id}/send` | Send a sentence or an action. Returns **202** (section 1.3). |
 | `GET /api/chat/{id}/state` | A snapshot for the Details sheet and for a fast resume (section 1.4). |

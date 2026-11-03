@@ -1,13 +1,12 @@
 "use strict";
-/* chat-sheet.js: the Details sheet (SimChat.sheet): a slide-over with four tabs (Design, Tests, Results, Parts) built from the cards the chat already holds.
-   Dialog semantics: aria-modal, focus trap, Esc closes, focus returns to whatever opened it. The Tests tab is the editable table; every edit is a structured action. */
+/* chat-sheet.js: the Plan, Tests and Parts panes of the right-hand dock (registered with SimChat.panes, see chat-shell.js), built from the cards the chat already holds.
+   SimChat.sheet keeps its old API (open(tab), close(), isOpen()): "design" opens Plan, "tests" and "results" open Tests, "parts" opens Parts. The Tests pane holds the editable
+   table and, below it, the results matrix; every edit is a structured action. */
 (function () {
   const V = SimChat.views, h = V.h;
   const S = (SimChat.sheet = {});
-  const TABS = [["design", "Design"], ["tests", "Tests"], ["results", "Results"], ["parts", "Parts"]];
-  let scrim = null, panel = null, tablist = null, foot = null, titleEl = null;
-  const panes = {}, secs = {};
-  let isOpen = false, current = "design", opener = null, raf = 0, timer = 0;
+  const secs = {};
+  let raf = 0;
 
   /* ---------------------------------------------------------------- context from the cards the chat holds */
   const lastCard = type => { const st = SimChat.state || {}; return (st.order || []).map(id => st.cards[id]).filter(c => c && c.type === type).pop() || null; };
@@ -189,97 +188,55 @@
     ];
   }
 
-  /* ---------------------------------------------------------------- build the dialog once */
-  function build() {
-    if (panel) return;
-    scrim = h("div", { class: "ch-sh-scrim", hidden: true });
-    scrim.addEventListener("click", () => S.close());
-    titleEl = h("h2", { class: "ch-sh-title", id: "ch-sh-title", text: "Details" });
-    tablist = h("div", { class: "ch-sh-tabs", role: "tablist", "aria-label": "Details" }, TABS.map(([id, label]) => {
-      const b = h("button", { type: "button", role: "tab", id: "ch-sh-tab-" + id, "aria-controls": "ch-sh-pane-" + id, "aria-selected": "false", tabindex: "-1", class: "ch-sh-tab", dataset: { tab: id }, text: label });
-      b.addEventListener("click", () => select(id, true));
-      return b;
-    }));
-    tablist.addEventListener("keydown", e => {
-      const i = TABS.findIndex(t => t[0] === current);
-      const to = e.key === "ArrowRight" ? i + 1 : e.key === "ArrowLeft" ? i - 1 : e.key === "Home" ? 0 : e.key === "End" ? TABS.length - 1 : null;
-      if (to === null) return;
-      e.preventDefault();
-      select(TABS[(to + TABS.length) % TABS.length][0], true);
-    });
-    const back = h("button", { type: "button", class: "ch-sh-close", "aria-label": "Close the details" }, V.icon("chevron", "ch-sh-back"), h("span", { class: "ch-sh-close-t", text: "Back to the chat" }));
-    back.addEventListener("click", () => S.close());
-    const body = h("div", { class: "ch-sh-body" }, TABS.map(([id, label]) => {
-      const p = h("div", { class: "ch-sh-pane ch-v-body", role: "tabpanel", id: "ch-sh-pane-" + id, "aria-labelledby": "ch-sh-tab-" + id, hidden: true, tabindex: "0" });
-      panes[id] = p;
-      return p;
-    }));
-    foot = h("div", { class: "ch-sh-foot" });
-    panel = h("aside", { class: "ch-sh", role: "dialog", "aria-modal": "true", "aria-labelledby": "ch-sh-title", tabindex: "-1", hidden: true },
-      h("header", { class: "ch-sh-head" }, back, titleEl), tablist, body, foot);
-    panel.addEventListener("keydown", e => {
-      if (e.key === "Escape") { e.stopPropagation(); e.preventDefault(); S.close(); return; }
-      if (e.key !== "Tab") return;
-      const f = [...panel.querySelectorAll("button,[href],input,select,textarea,summary,[tabindex]:not([tabindex='-1'])")].filter(x => !x.disabled && !x.hidden && x.offsetParent !== null);
-      if (!f.length) return;
-      const first = f[0], last = f[f.length - 1];
-      if (e.shiftKey && (document.activeElement === first || document.activeElement === panel)) { e.preventDefault(); last.focus(); }
-      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-    });
-    document.body.append(scrim, panel);
-    const defs = { design: designDefs, tests: testsDefs, results: resultsDefs, parts: partsDefs };
-    for (const [id] of TABS) secs[id] = V.sections(panes[id], defs[id]());
-  }
-
-  function select(id, focus) {
-    current = id;
-    for (const [t] of TABS) {
-      const on = t === id, b = tablist.querySelector(`[data-tab="${t}"]`);
-      b.setAttribute("aria-selected", String(on)); b.tabIndex = on ? 0 : -1;
-      panes[t].hidden = !on;
-    }
-    refreshNow();
-    if (focus) tablist.querySelector(`[data-tab="${id}"]`).focus();
-  }
-  function refreshNow() {
-    if (!isOpen) return;
+  /* ---------------------------------------------------------------- the panes: Plan (design), Tests (table + results), Parts */
+  const foot = () => h("div", { class: "ch-sh-foot" });
+  const mountSecs = (body, key, defs) => { secs[key] = V.sections(body, defs()); };
+  function paintFoot(node) {
     const x = context();
-    secs[current].update(x, true);
-    foot.replaceChildren(V.limitLine((x.limits && x.limits.line) || "Simulation only, with a simple built-in autopilot."));
-    if (x.limits && x.limits.stale) foot.classList.add("is-stale"); else foot.classList.remove("is-stale");
+    node.replaceChildren(V.limitLine((x.limits && x.limits.line) || "Simulation only, with a simple built-in autopilot."));
+    node.classList.toggle("is-stale", !!(x.limits && x.limits.stale));
   }
+  /* each pane keeps its own sections; refresh() redraws only what changed, and only while the pane is visible (the design picture can start a 3D render) */
+  function pane(id, label, icon, order, build) {
+    return { id, label, icon, order, mount(body) {
+      body.classList.add("ch-v-body");
+      const f = foot();
+      const secsFor = build(body);
+      body.appendChild(f);
+      return { refresh() { const x = context(); secsFor.forEach(k => secs[k].update(x, true)); paintFoot(f); } };
+    } };
+  }
+  const paneDefs = [
+    pane("plan", "Plan", "list", 10, body => { mountSecs(body, "design", designDefs); return ["design"]; }),
+    pane("tests", "Tests", "check", 30, body => {
+      body.appendChild(h("h3", { class: "ch-rp-sub", text: "Tests" }));
+      const t = h("div", { class: "ch-v-body" }); body.appendChild(t); secs.tests = V.sections(t, testsDefs());
+      body.appendChild(h("h3", { class: "ch-rp-sub", id: "ch-rp-results", text: "Results" }));
+      const r = h("div", { class: "ch-v-body" }); body.appendChild(r); secs.results = V.sections(r, resultsDefs());
+      return ["tests", "results"];
+    }),
+    pane("parts", "Parts", "box", 40, body => { mountSecs(body, "parts", partsDefs); return ["parts"]; }),
+  ];
+  const TAB_PANE = { design: "plan", plan: "plan", tests: "tests", results: "tests", parts: "parts" };
+  paneDefs.forEach(d => SimChat.panes.register(d));
+
+  function refreshNow() { const id = SimChat.panes.shown(); if (id === "plan" || id === "tests" || id === "parts") SimChat.panes.refresh(id); }
   function schedule() {
-    if (!isOpen || raf) return;
+    if (raf || !isOpen()) return;
     raf = requestAnimationFrame(() => { raf = 0; refreshNow(); });
   }
+  function isOpen() { return SimChat.panes.isOpen() && ["plan", "tests", "parts"].includes(SimChat.panes.shown()); }
 
-  /* ---------------------------------------------------------------- public API */
-  S.isOpen = () => isOpen;
-  S.open = function (tab, opts) {
-    build();
-    const first = !isOpen;
-    if (first) opener = document.activeElement && document.activeElement !== document.body ? document.activeElement : null;
-    isOpen = true;
-    const want = TABS.some(t => t[0] === tab) ? tab : (tab ? "design" : current);
-    panel.hidden = false; scrim.hidden = false;
-    document.body.classList.add("ch-sh-lock");
-    select(want, false);
-    requestAnimationFrame(() => { panel.classList.add("is-open"); scrim.classList.add("is-open"); });
-    if (first) setTimeout(() => { const t = tablist.querySelector('[aria-selected="true"]'); if (t) t.focus(); }, 30);
+  /* ---------------------------------------------------------------- public API (kept from the slide-over sheet, so every "Open the test table" button still works) */
+  S.isOpen = isOpen;
+  S.open = function (tab) {
+    const id = TAB_PANE[tab] || (tab ? "plan" : "plan");
+    SimChat.panes.open(id);
+    if (tab === "results") setTimeout(() => { const n = document.getElementById("ch-rp-results"); if (n && n.scrollIntoView) n.scrollIntoView({ block: "start", behavior: SimChat.util.reducedMotion() ? "auto" : "smooth" }); }, 60);
   };
-  S.close = function () {
-    if (!isOpen) return;
-    isOpen = false;
-    panel.classList.remove("is-open"); scrim.classList.remove("is-open");
-    document.body.classList.remove("ch-sh-lock");
-    const done = () => { if (!isOpen) { panel.hidden = true; scrim.hidden = true; } };
-    clearTimeout(timer);
-    timer = setTimeout(done, window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 340);
-    if (opener && opener.isConnected) opener.focus();
-    opener = null;
-  };
+  S.close = () => { if (isOpen()) SimChat.panes.close(); };
   SimChat.on("card:create", schedule);
   SimChat.on("card:patch", schedule);
   SimChat.on("limits", schedule);
-  SimChat.on("reset", () => { editing = null; adding = false; runPick = null; sel = null; caps = null; capsTried = false; if (isOpen) S.close(); });
+  SimChat.on("reset", () => { editing = null; adding = false; runPick = null; sel = null; caps = null; capsTried = false; refreshNow(); });
 })();

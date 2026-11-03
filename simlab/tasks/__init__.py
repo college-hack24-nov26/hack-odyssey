@@ -3,7 +3,7 @@ from pathlib import Path
 import os
 
 from ..spec.task import TaskSpec
-from . import aerial, goto, pipe, rescue, sandbox, search, sewer  # noqa: F401
+from . import aerial, bag_mission, goto, pipe, rescue, sandbox, search, sewer  # noqa: F401
 from .base import Episode, Item, MeshItem, Requirement, StepResult, Task, World
 
 PRESET_DIR = Path(__file__).parent / "presets"

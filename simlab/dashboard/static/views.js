@@ -1,5 +1,5 @@
 "use strict";
-/* views.js: pure builders for the chat page's card bodies and the Details sheet.
+/* views.js: pure builders for the chat page's card bodies and the right-hand panes (Plan, Tests, Parts).
    Everything returns DOM nodes (text goes in through textContent, never through innerHTML; the only innerHTML is the page's own static icon SVG).
    Attached to SimChat.views; this file declares nothing at column 0 so it cannot collide with the other dashboard scripts. */
 (function () {

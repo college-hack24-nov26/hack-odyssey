@@ -169,7 +169,8 @@
       const slot = h("div", { class: "ch-lv-slot", "aria-label": "Simulation view", role: "img" });
       const poster = h("img", { class: "ch-lv-poster", alt: "The last picture of this run", hidden: true });
       const over = h("div", { class: "ch-lv-over", hidden: true, role: "status" });
-      const away = h("div", { class: "ch-lv-away", hidden: true }, V.icon("play"), h("span", { text: "Showing live in the bar below" }));
+      const awayText = h("span", { text: "Showing live in the bar below" });
+      const away = h("div", { class: "ch-lv-away", hidden: true }, V.icon("play"), awayText);
       const pip = h("div", { class: "ch-lv-pipwrap" });
       const hint = h("span", { class: "ch-lv-hint", hidden: true, text: "Click to orbit" });
       const view = h("div", { class: "ch-lv-view" }, slot, poster, over, away, pip, hint);
@@ -231,8 +232,8 @@
       if (live) {
         live.on("stats", onStats);
         live.on("poster", e => { if (body.isConnected && body._card.current && e.runId === body._card.current.id) { showPoster(e.url); refreshOverlay(body._card); } });
-        live.on("thumb", e => { if (e.cardId === body._card.id) { away.hidden = !e.away; slot.classList.toggle("is-away", !!e.away); } });
-        live.on("interactive", e => { if (e.cardId === body._card.id) hint.hidden = !e.available; });
+        live.on("thumb", e => { if (e.cardId === body._card.id) { away.hidden = !e.away; slot.classList.toggle("is-away", !!e.away); awayText.textContent = e.where === "pane" ? "Showing live in the Simulation pane" : e.where === "focus" ? "Showing full screen" : "Showing live in the bar below"; } });
+        live.on("interactive", e => { if (e.cardId === body._card.id) hint.hidden = !(e.available && e.where !== "pane"); });
         live.on("replaced", e => { if (e.cardId === body._card.id) refreshOverlay(body._card); });
       }
       view.addEventListener("click", () => { if (live && live.owner() === body._card.id) live.setOrbit(true); });

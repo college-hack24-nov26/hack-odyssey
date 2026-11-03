@@ -4,7 +4,7 @@ platform: air
 card:
   title: Watch from the air
   blurb: A small drone with a camera that flies over an area to find and keep watch on something. Observation only.
-keywords: [drone, drones, quadcopter, quad, multirotor, fly, flying, air, aerial, uav, surveillance, watch, search, patrol, observe, observation, camera]
+keywords: [drone, drones, quadcopter, quad, multirotor, fly, flying, air, aerial, uav, surveillance, watch, search, patrol, observe, observation, camera, field, fields, farm, crops, overhead]
 task: search_targets
 questions:
   - id: time

@@ -38,13 +38,49 @@ def test_bad_answers_fall_back_to_the_defaults_and_a_broken_goal_file_is_skipped
 
 @pytest.mark.parametrize("text,goal", [
     ("find cracks in a sewer pipe", "sewer_inspect"), ("I need to inspect drains for leaks", "sewer_inspect"),
-    ("a robot for checking a culvert", "sewer_inspect"), ("a boat for rescue operations", "water_rescue"),
+    ("a robot for checking a culvert pipe", "sewer_inspect"), ("a boat for rescue operations", "water_rescue"),
     ("save a swimmer in a lake", "water_rescue"), ("flood rescue vessel", "water_rescue"),
     ("a drone that watches an area", "air_search"), ("quadcopter for aerial surveillance", "air_search"),
     ("UAV to patrol and observe", "air_search"), ("SEWER PIPES!!!", "sewer_inspect")])
 def test_sentences_find_their_goal(text, goal):
     m = match(text)
     assert m and m[0]["goal"] == goal and m[0]["matched"]
+
+
+# One shared word is not a ready-made job: the goal needs 2+ different keyword hits ("a robot for checking a culvert" used to match on "culvert" alone;
+# it now asks the user, which is the safer failure than quietly building the wrong machine).
+PLANT = "a plant monitor that reads soil moisture and tells me when to water it"
+
+
+def test_a_plant_monitor_that_mentions_water_is_not_the_boat_job():
+    assert match(PLANT) == []
+    assert match("a plant monitor ... water") == []
+
+
+@pytest.mark.parametrize("text", ["water", "a robot for checking a culvert", "I want a camera", "rescue", "a leak", "a rover", "tunnel"])
+def test_one_keyword_alone_matches_nothing(text):
+    assert match(text) == []
+
+
+def test_two_different_keywords_are_enough_and_repeats_or_variants_do_not_count_twice():
+    assert [m["goal"] for m in match("water rescue")] == ["water_rescue"]
+    assert match("water water water") == []                                             # the same word again is still one hit
+    assert match("inspection") == []                                                    # one word hits both "inspect" and "inspection": still one hit
+    m = match("inspect the inspection")
+    assert m and m[0]["goal"] == "sewer_inspect" and m[0]["score"] == 2
+
+
+def test_a_sentence_for_two_jobs_ranks_the_stronger_first_and_the_score_counts_words():
+    m = match("a boat to rescue a swimmer, then fly a drone over the lake")
+    assert [x["goal"] for x in m][0] == "water_rescue" and {x["goal"] for x in m} == {"water_rescue", "air_search"}
+    assert all(x["score"] >= 2 for x in m)
+
+
+@pytest.mark.parametrize("text,goal", [("A boat that finds a person in a flooded street", "water_rescue"), ("A rover that inspects a 30 cm sewer pipe", "sewer_inspect"),
+                                       ("A drone that looks over a field for 10 minutes", "air_search")])
+def test_the_chats_example_sentences_still_match_with_two_hits(text, goal):
+    m = match(text)                                                  # (the drone one needed "field" added to the air_search keywords)
+    assert m and m[0]["goal"] == goal and m[0]["score"] >= 2
 
 
 def test_nonsense_matches_nothing_so_the_user_is_asked():

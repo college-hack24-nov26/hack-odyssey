@@ -2,8 +2,9 @@
 /* SimChat: the core of the chat page (/chat). It owns the store, the long-poll loop, the card shell, the dock, the chips, the Limits strip and the composer.
    The ONLY column-0 declaration of the whole chat front end is `const SimChat` below: every other chat file is an IIFE that attaches to it (the dashboard scripts
    share one global scope and tests/test_parts_api.py fails on duplicate top-level names). Everything inside is indented on purpose.
-   Extension points for the other chat files: SimChat.registerCard, SimChat.on, SimChat.util, SimChat.layers, SimChat.sheet (set by chat-sheet.js),
-   SimChat.live (set by chat-live.js), SimChat.dock.slot, SimChat.fixtures (set by chat-fixtures.js), SimChat.net (replaced by chat-mock.js). */
+   Extension points for the other chat files: SimChat.registerCard, SimChat.on, SimChat.util, SimChat.layers, SimChat.shell and SimChat.panes (the sidebar and the right-hand
+   pane registry, set by chat-shell.js), SimChat.sheet (the Plan/Tests/Parts panes, chat-sheet.js), SimChat.live (chat-live.js), SimChat.dock.slot,
+   SimChat.fixtures (chat-fixtures.js), SimChat.net (replaced by chat-mock.js). Events emitted: chat (id changed), reset, message, card:create, card:patch, limits, theme, pane. */
 const SimChat = (function () {
   const $ = id => document.getElementById(id);
   const reduced = () => !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -46,6 +47,16 @@ const SimChat = (function () {
     "close": '<path d="M4 4l8 8M12 4l-8 8"/>',
     "settings": '<path d="M2.5 5h11M2.5 11h11"/><circle cx="6" cy="5" r="1.7" fill="var(--ch-surface)"/><circle cx="10" cy="11" r="1.7" fill="var(--ch-surface)"/>',
     "down": '<path d="M8 3v10M3.8 8.8L8 13l4.2-4.2"/>',
+    "sidebar": '<rect x="2.5" y="3" width="11" height="10" rx="2"/><path d="M6.2 3v10"/>',
+    "panes": '<rect x="2.5" y="3" width="11" height="10" rx="2"/><path d="M9.8 3v10"/>',
+    "folder": '<path d="M2.5 5.2A1.7 1.7 0 0 1 4.2 3.5h2.3l1.5 1.7h3.8a1.7 1.7 0 0 1 1.7 1.7v4.4a1.7 1.7 0 0 1-1.7 1.7H4.2a1.7 1.7 0 0 1-1.7-1.7z"/>',
+    "folder-plus": '<path d="M2.5 5.2A1.7 1.7 0 0 1 4.2 3.5h2.3l1.5 1.7h3.8a1.7 1.7 0 0 1 1.7 1.7v4.4a1.7 1.7 0 0 1-1.7 1.7H4.2a1.7 1.7 0 0 1-1.7-1.7z"/><path d="M8 7.3v3.4M6.3 9h3.4"/>',
+    "chat": '<path d="M3 4.2A1.7 1.7 0 0 1 4.7 2.5h6.6A1.7 1.7 0 0 1 13 4.2v4.6a1.7 1.7 0 0 1-1.7 1.7H7.2L4.4 13v-2.5h0A1.7 1.7 0 0 1 3 8.8z"/>',
+    "search": '<circle cx="7.2" cy="7.2" r="4.2"/><path d="M10.4 10.4L13.5 13.5"/>',
+    "list": '<path d="M5.5 4.5h8M5.5 8h8M5.5 11.5h8"/><circle cx="2.8" cy="4.5" r=".7" fill="currentColor" stroke="none"/><circle cx="2.8" cy="8" r=".7" fill="currentColor" stroke="none"/><circle cx="2.8" cy="11.5" r=".7" fill="currentColor" stroke="none"/>',
+    "cube": '<path d="M8 2.2l5 2.6v6.4L8 13.8 3 11.2V4.8z"/><path d="M3 4.8l5 2.6 5-2.6M8 7.4v6.4"/>',
+    "box": '<path d="M2.6 5.2L8 2.6l5.4 2.6v5.6L8 13.4l-5.4-2.6z"/><path d="M2.6 5.2L8 7.8l5.4-2.6M8 7.8v5.6"/>',
+    "tasks": '<rect x="2.5" y="2.8" width="11" height="10.4" rx="2"/><path d="M5.2 6.2l1 1 1.8-1.9M9 6.4h2.4M5.2 10l1 1 1.8-1.9M9 10.2h2.4"/>',
   };
   function icon(name) {
     const p = ICONS[name];
@@ -217,6 +228,7 @@ const SimChat = (function () {
       catch (e) { if (e.status === 404 || e.status === 405) return post("/api/chat", {}); throw e; }
     },
     latest() { return jfetch("/api/chat/latest"); },
+    list() { return jfetch("/api/chat/list"); },
     capabilities() { return jfetch("/api/chat/capabilities"); },
     poll(id, after, wait, signal) { return jfetch("/api/chat/" + encodeURIComponent(id) + "/events?after=" + after + "&wait=" + wait, { signal }); },
     send(id, body) { return post("/api/chat/" + encodeURIComponent(id) + "/send", body); },
@@ -591,7 +603,6 @@ const SimChat = (function () {
   function updateMode() {
     const want = hasContent() ? "chat" : "empty";
     if (document.body.dataset.state !== want) setMode(want);
-    $("ch-overview-btn").hidden = !state.order.length;
     renderLimits();
   }
   function setMode(want) {
@@ -806,6 +817,7 @@ const SimChat = (function () {
     return creating;
   }
   function setChat(id) {
+    const changed = state.chatId !== id;
     state.chatId = id;
     if (id) {
       LS.set("simlab.chat.id", id);
@@ -814,6 +826,7 @@ const SimChat = (function () {
       LS.del("simlab.chat.id");
       try { history.replaceState(null, "", location.pathname + location.search); } catch (e) { /* ignore */ }
     }
+    if (changed) emit("chat", { id });
   }
   function send(action, opts) {
     opts = opts || {};
@@ -941,7 +954,6 @@ const SimChat = (function () {
     startLoop(id);
   }
   async function newChat() {
-    closeDrawer();
     stopLoop();
     clearView(false);
     setChat(null);
@@ -960,27 +972,8 @@ const SimChat = (function () {
     if (remote && state.chatId) { Promise.resolve().then(() => SimChat.net.rename(state.chatId, state.title)).catch(() => { /* the server may not support renaming yet */ }); }
   }
 
-  /* ================================================================ drawer, menus, settings, theme */
-  let drawerOpener = null, releaseDrawer = null;
-  function openDrawer() {
-    const d = $("ch-drawer");
-    if (!d.hidden) return;
-    drawerOpener = document.activeElement;
-    d.hidden = false; $("ch-scrim").hidden = false;
-    $("ch-history-btn").setAttribute("aria-expanded", "true");
-    releaseDrawer = trapFocus(d);
-    layers.push("drawer", closeDrawer);
-    $("ch-drawer-new").focus();
-  }
-  function closeDrawer() {
-    const d = $("ch-drawer");
-    if (d.hidden) return;
-    d.hidden = true; $("ch-scrim").hidden = true;
-    $("ch-history-btn").setAttribute("aria-expanded", "false");
-    if (releaseDrawer) releaseDrawer();
-    layers.remove("drawer");
-    if (drawerOpener && drawerOpener.focus && document.contains(drawerOpener)) drawerOpener.focus();
-  }
+  /* ================================================================ menus, settings, theme (the sidebar and the panes live in chat-shell.js) */
+  function openDrawer() { if (SimChat.shell) SimChat.shell.openSidebar({ search: true }); }
   function closePops(except) {
     ["ch-menu", "ch-settings"].forEach(id => {
       if (id === except) return;
@@ -1073,20 +1066,11 @@ const SimChat = (function () {
 
   /* ================================================================ boot */
   function wire() {
-    $("ch-history-btn").innerHTML = icon("history");
     $("ch-menu-btn").innerHTML = icon("menu");
-    $("ch-drawer-close").innerHTML = icon("close");
-    $("ch-drawer-new").append(iconEl("plus"), document.createTextNode("New chat"));
-    $("ch-overview-btn").append(iconEl("sheet"), document.createTextNode("Overview"));
     $("ch-send").innerHTML = icon("send");
     $("ch-stop").innerHTML = icon("stop");
     $("ch-stop").setAttribute("aria-label", "Stop");
     $("ch-dock-chev").innerHTML = icon("chevron");
-    $("ch-history-btn").addEventListener("click", () => ($("ch-drawer").hidden ? openDrawer() : closeDrawer()));
-    $("ch-drawer-close").addEventListener("click", closeDrawer);
-    $("ch-scrim").addEventListener("click", closeDrawer);
-    $("ch-drawer-new").addEventListener("click", newChat);
-    $("ch-overview-btn").addEventListener("click", () => openSheet(tabForActivity()));
     $("ch-theme-btn").addEventListener("click", () => setTheme(effectiveTheme() === "dark" ? "light" : "dark"));
     $("ch-menu-btn").addEventListener("click", e => { e.stopPropagation(); togglePop("ch-menu", $("ch-menu-btn")); });
     document.addEventListener("click", e => { if (!e.target.closest(".ch-menuwrap") && !e.target.closest(".ch-stopmenu") && !e.target.closest("#ch-dock-stop") && !e.target.closest("#ch-stop")) closePops(); });
@@ -1111,6 +1095,7 @@ const SimChat = (function () {
     window.addEventListener("offline", () => setConn(false));
     if (window.matchMedia) { const mq = matchMedia("(prefers-color-scheme: light)"); const h = () => { if (settings.theme === "auto") paintTheme(); }; if (mq.addEventListener) mq.addEventListener("change", h); }
     wireScroll();
+    if (window.ResizeObserver) { let w = 0; new ResizeObserver(es => { const nw = Math.round(es[0].contentRect.width); if (nw !== w) { w = nw; autosize(); } }).observe($("ch-composer")); }       // the box was sized before the columns settled: measure again when its width changes
     buildMenu();
     buildSettings();
     paintTheme();
@@ -1138,7 +1123,7 @@ const SimChat = (function () {
 
   /* ================================================================ the public object */
   const SimChat = {
-    util, state, net, settings, layers, fixtures: {}, sheet: null, live: null, mock: null,
+    util, state, net, settings, layers, fixtures: {}, shell: null, panes: null, sheet: null, live: null, mock: null,
     dock: { slot: $("ch-dock-slot") },
     stream: $("ch-stream"),
     on, emit, registerCard, send, sendText, applyEvents, runAction, actionButtons, chipEl, openSheet,

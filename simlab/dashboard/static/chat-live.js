@@ -1,7 +1,7 @@
 "use strict";
 /* chat-live.js: the ONE shared live 3D view (SimChat.live).
-   A single Viewer3D lives inside a host element. The host is moved (not recreated) between the newest "Watch it work" card, a small thumbnail in the dock when that card
-   scrolls out of view, and the full-screen Focus overlay. The viewer is fed exactly like the Lab tab does: GET /api/lab/scene when the scene changes, and the /ws/lab
+   A single Viewer3D lives inside a host element. The host is moved (not recreated) between the newest "Watch it work" card, the Simulation pane of the right-hand dock
+   (while that pane is visible), a small thumbnail in the progress bar when the card scrolls out of view, and the full-screen Focus overlay. The viewer is fed exactly like the Lab tab does: GET /api/lab/scene when the scene changes, and the /ws/lab
    stream for poses. It freezes into a poster (a still picture) when the run ends, is replaced, or the page stays hidden for 30 s, and the GL context is released.
    A second, short-lived "photo booth" viewer draws the see-through picture for the Design card. At most two GL contexts exist at any time. */
 (function () {
@@ -17,7 +17,7 @@
   let own = null;                                // {cardId, runId, slot, sceneId, since}
   let host = null, viewer = null, io = null;
   let ws = null, wsTimer = 0, closing = false;
-  let thumb = false, orbit = false, focusEl = null, focusOpener = null;
+  let thumb = false, orbit = false, focusEl = null, focusOpener = null, paneEl = null;
   let lastSeen = null, sceneLoaded = null, sceneTries = 0, lastT = null, lastStats = 0, hiddenTimer = 0, wanted = null;
   let camImg = null, camOn = false;
 
@@ -37,17 +37,18 @@
   }
   function place() {
     if (!host || !own) return;
-    const target = focusEl ? focusEl.querySelector(".ch-lv-stage") : thumb && SimChat.dock && SimChat.dock.slot ? SimChat.dock.slot : own.slot;
+    const target = focusEl ? focusEl.querySelector(".ch-lv-stage") : paneEl ? paneEl : thumb && SimChat.dock && SimChat.dock.slot ? SimChat.dock.slot : own.slot;
     if (target && host.parentNode !== target) target.appendChild(host);
-    host.classList.toggle("ch-lv-thumb", !!thumb && !focusEl);
+    host.classList.toggle("ch-lv-thumb", !!thumb && !focusEl && !paneEl);
   }
-  function availability() { emit("interactive", { cardId: own && own.cardId, available: !!own && !orbit && !thumb && !focusEl }); }
+  const where = () => (paneEl ? "pane" : thumb ? "bar" : "card");
+  function availability() { emit("interactive", { cardId: own && own.cardId, available: !!own && !orbit && !focusEl && (!!paneEl || !thumb), where: where() }); }
   function setThumb(on) {
     if (thumb === on || !own) return;
     if (on && !(SimChat.dock && SimChat.dock.slot)) return;
     thumb = on;
     place();
-    emit("thumb", { cardId: own.cardId, away: on });
+    emit("thumb", { cardId: own.cardId, away: on || !!paneEl, where: where() });
     availability();
   }
 
@@ -55,6 +56,15 @@
   L.owner = () => (own ? own.cardId : null);
   L.poster = runId => posters.get(runId) || null;
   L.isFocused = () => !!focusEl;
+  L.hasView = () => !!(own && viewer);
+  /* the Simulation pane tells us where to draw while it is visible (el), and takes the view back with null */
+  L.setPane = function (el) {
+    paneEl = el || null;
+    if (!own) return;
+    place();
+    emit("thumb", { cardId: own.cardId, away: !!paneEl || thumb, where: where() });
+    availability();
+  };
 
   L.attach = function (cardId, slot, o = {}) {
     if (own && own.cardId !== cardId) freezeNow(own.cardId, { why: "replaced" });
@@ -72,6 +82,7 @@
     place();
     openWs();
     availability();
+    if (fresh && SimChat.panes && SimChat.panes.canAutoOpen()) SimChat.panes.open("simulation", { auto: true });      // wide screens only, and never once the person has closed the dock
     return true;
   };
 
@@ -117,7 +128,7 @@
     if (info.why === "hidden") wanted = { cardId: o.cardId, slot: o.slot, runId: o.runId, sceneId: o.sceneId };
     own = null;
     teardown();
-    emit("thumb", { cardId: o.cardId, away: false });
+    emit("thumb", { cardId: o.cardId, away: false, where: "card" });
     emit("poster", { runId: o.runId, cardId: o.cardId, url, why: info.why || "ended" });
   }
   L.freeze = freezeNow;
@@ -250,7 +261,7 @@
     place();
     viewer.setInteractive(true);
     availability();
-    emit("thumb", { cardId: own.cardId, away: true });
+    emit("thumb", { cardId: own.cardId, away: true, where: "focus" });
     focusEl.focus();
     if (camOn) setCamera(true, camBox);
   };
@@ -268,7 +279,7 @@
     document.body.classList.remove("ch-lv-lock");
     el.remove();
     if (viewer) { orbit = false; viewer.setInteractive(false); }
-    if (own && !silent) { place(); emit("thumb", { cardId: own.cardId, away: thumb }); availability(); }
+    if (own && !silent) { place(); emit("thumb", { cardId: own.cardId, away: thumb || !!paneEl, where: where() }); availability(); }
     if (!silent && focusOpener && focusOpener.isConnected) focusOpener.focus();
     focusOpener = null;
   }
@@ -327,4 +338,47 @@
     if (photoCache.size > 12) photoCache.delete(photoCache.keys().next().value);
     return job;
   };
+
+  /* ---------------------------------------------------------------- the Simulation pane */
+  if (SimChat.panes) SimChat.panes.register({ id: "simulation", label: "Simulation", short: "Simulation", icon: "cube", order: 20,
+    mount(body) {
+      body.classList.add("ch-v-body");
+      const stage = h("div", { class: "ch-lv-pane-stage", role: "img", "aria-label": "Simulation view" });
+      const poster = h("img", { class: "ch-lv-poster", alt: "The last picture of this run", hidden: true });
+      const idle = h("div", { class: "ch-lv-over", role: "status" }, V.icon("play"), h("span", { text: "No simulation is showing. Start one from the Watch card in the chat." }));
+      const hint = h("span", { class: "ch-lv-hint", hidden: true, text: "Click to orbit" });
+      const view = h("div", { class: "ch-lv-view ch-lv-view--pane is-empty" }, stage, poster, idle, hint);
+      const numEls = {};
+      const nums = h("div", { class: "ch-lv-nums is-col", role: "group", "aria-label": "Live numbers" }, [["time", "Time"], ["dist", "Distance to goal"], ["bat", "Battery"], ["res", "Result"]].map(([k, l]) => {
+        const b = h("b", { class: "ch-v-mono", text: "-" }); numEls[k] = b;
+        return h("div", { class: "ch-lv-num" }, b, h("span", { text: l }));
+      }));
+      let lastPoster = null;
+      const sync = () => {
+        const on = L.hasView();
+        poster.hidden = on || !lastPoster;
+        idle.hidden = on || !!lastPoster;
+        view.classList.toggle("is-empty", !on && !lastPoster);
+      };
+      L.on("stats", s => {
+        if (!body.isConnected || !L.hasView()) return;
+        numEls.time.textContent = V.num(s.t, 1) + " s";
+        numEls.dist.textContent = s.dist !== undefined && s.dist !== null ? V.num(s.dist, 1) + " m" : "-";
+        const sc = s.battery === null || s.battery === undefined ? null : typeof s.battery === "number" ? s.battery : s.battery.soc;
+        numEls.bat.textContent = sc === null || sc === undefined ? "-" : V.num(100 * sc, 0) + " %";
+        numEls.res.textContent = s.result ? (s.result.success ? "Reached the goal" : s.result.crash ? "Failed: " + s.result.crash : s.result.timeout ? "Time ran out" : "Ended") : "Running";
+      });
+      L.on("poster", e => { if (e.url) { lastPoster = e.url; poster.src = e.url; } sync(); });
+      L.on("thumb", sync);
+      L.on("interactive", e => { hint.hidden = !(e.available && e.where === "pane"); sync(); });
+      view.addEventListener("click", () => { if (L.hasView()) L.setOrbit(true); });
+      const focusBtn = V.btn("Focus", { icon: "expand", onClick: () => L.focus() });
+      const stopBtn = V.btn("Stop", { icon: "stop", onClick: (e, b) => V.send({ type: "stop", args: { job: "live" } }, b) });
+      body.append(view, nums,
+        h("p", { class: "ch-lv-cap" }, h("b", { text: "A demonstration, not a test. " }), "A simple built-in autopilot in a computer model of the scene."),
+        V.row(focusBtn, stopBtn));
+      return { refresh: sync, stage };
+    },
+    show() { const st = document.querySelector("#ch-rp-p-simulation .ch-lv-pane-stage"); if (st) L.setPane(st); },
+    hide() { L.setPane(null); } });
 })();

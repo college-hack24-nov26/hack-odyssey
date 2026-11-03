@@ -306,6 +306,7 @@
   Object.assign(SimChat.net, {
     newChat() { return Promise.resolve({ id: "mock-" + Math.random().toString(36).slice(2, 8), seq: 0, title: "New chat" }); },
     latest() { return Promise.resolve({ id: null }); },
+    list() { return Promise.resolve({ chats: [] }); },
     capabilities() {
       return Promise.resolve({ ai: { configured: true, enabled: true, setting: "auto", left: 38, limit: 50, approx: true, low: false, exhausted: false }, mujoco: true,
         copy: { headline: "What do you want to build and test?", line: "Describe a job. I will design a machine, test it in simulation, and tell you what I could not test.", placeholder: "e.g. a boat that reaches a person 150 m away in 1 m waves",
