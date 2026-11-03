@@ -1,0 +1,24 @@
+<!doctype html><meta charset="utf-8"><title>__TITLE__</title>
+<style>
+html,body{margin:0;background:#0b1220;height:100%}
+.win{margin:26px auto;width:1020px;height:640px;border-radius:12px;background:#0f1a2e;box-shadow:0 20px 60px #0008;border:1px solid #23324f;overflow:hidden;font:15px/1.5 Consolas,"Cascadia Mono",monospace;color:#cfe0ff}
+.bar{height:34px;background:#16233d;display:flex;align-items:center;padding:0 14px;gap:8px;color:#8aa0c8;font:13px system-ui}
+.dot{width:12px;height:12px;border-radius:50%}
+#out{padding:16px 20px;height:580px;overflow:hidden;white-space:pre-wrap}
+.cmd{color:#7dd3fc}.ok{color:#4ade80}.warn{color:#facc15}.fix,.fail{color:#fb7185}.dim{color:#7f93b8}.hd{color:#c4b5fd}
+.cur{display:inline-block;width:8px;height:16px;background:#cfe0ff;vertical-align:-2px;animation:b 1s steps(1) infinite}@keyframes b{50%{opacity:0}}
+</style>
+<div class="win"><div class="bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span style="margin-left:10px">__TITLE__</span></div><div id="out"></div></div>
+<script>
+const L=__DATA__, out=document.getElementById('out');
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+(async()=>{
+  for(const l of L){
+    const d=document.createElement('div'); d.className=l.c||''; out.appendChild(d);
+    if(l.c==='cmd'){ d.textContent='> '; for(const ch of l.t){ d.textContent+=ch; await sleep(28);} await sleep(450); }
+    else { d.textContent=l.t; await sleep(l.w||260); }
+    out.scrollTop=out.scrollHeight;
+  }
+  window.__done=true;
+})();
+</script>
