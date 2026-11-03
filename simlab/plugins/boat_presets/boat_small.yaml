@@ -1,0 +1,8 @@
+name: boat_small
+kind: boat
+description: 1.2 m displacement boat, 20 kg, one propeller and a rudder.
+body: {mass: 20.0, length: 1.2, width: 0.5, height: 0.3}
+params: {thrust_max: 60.0, rudder_max_deg: 35.0, drag_scale: 1.0}
+sensors:
+  - {type: camera, name: bow, forward: 0.4, height: 0.55, tilt_deg: 3, fov_deg: 80, width_px: 640, height_px: 480, fps: 20}
+  - {type: pose, name: pose}
