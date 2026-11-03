@@ -1,0 +1,9 @@
+name: sewer_star
+task: sewer_drive
+description: A five-branch sewer star with chambers and goal posts, simulated by Webots.
+world: {}
+params: {map: star_five_goals}
+reward: {}
+episode: {max_time: 300, policy_hz: 12}
+randomize: {}
+labels: []

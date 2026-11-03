@@ -1,0 +1,15 @@
+name: lipo_cell_2200_30c
+kind: battery
+title: LiPo cell 2200 mAh 30C (generic)
+source: generic
+confidence: assumed
+mass_kg: 0.055
+notes: ''
+params:
+  chemistry: lipo
+  cell_v_nominal: 3.7
+  cell_v_full: 4.2
+  cell_v_cutoff: 3.3
+  capacity_mah: 2200.0
+  r_internal_ohm: 0.015
+  max_continuous_a: 66.0

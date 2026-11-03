@@ -1,0 +1,9 @@
+name: water_rescue
+task: water_rescue
+description: Go to a person floating 150 m away in open water and stay beside them. Waves, wind, debris and failures can be added.
+world: {}
+params: {range_m: 150, reach_radius: 4, hold_s: 2, debris: 0}
+reward: {progress: 0.2, reached: 10.0, collision: -0.5, time: -0.01, action: -0.01}
+episode: {policy_hz: 20}
+randomize: {}
+labels: [person]

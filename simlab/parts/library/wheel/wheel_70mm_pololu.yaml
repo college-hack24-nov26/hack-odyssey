@@ -1,0 +1,13 @@
+name: wheel_70mm_pololu
+kind: wheel
+title: 70 x 8 mm Pololu wheel (Romi)
+source: https://www.pololu.com/docs/0J68/all
+confidence: typical
+mass_kg: 0.02
+notes: Size from Pololu; mass and grip are estimates.
+params:
+  radius_m: 0.035
+  width_m: 0.008
+  friction: 0.8
+  rolling_resistance: 0.03
+  is_track: false

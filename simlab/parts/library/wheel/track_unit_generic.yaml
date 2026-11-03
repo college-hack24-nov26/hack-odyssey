@@ -1,0 +1,13 @@
+name: track_unit_generic
+kind: wheel
+title: Rubber track unit (one per side)
+source: generic
+confidence: assumed
+mass_kg: 0.05
+notes: Radius is the drive sprocket's.
+params:
+  radius_m: 0.02
+  width_m: 0.03
+  friction: 0.9
+  rolling_resistance: 0.06
+  is_track: true

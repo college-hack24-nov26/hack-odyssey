@@ -1,0 +1,14 @@
+name: tracked_crawler
+kind: ground_wheeled
+description: Tracked crawler; four road wheels per side under a belt, kinematically a skid-steer.
+body: {mass: 12.0, length: 0.55, width: 0.40, height: 0.18}
+params:
+  drive: tracked
+  wheel_radius: 0.06
+  max_speed: 0.4
+  max_accel: 0.5
+  max_yaw_rate: 1.2
+  yaw_gain: 0.67
+  light_intensity: 2.0
+sensors:
+  - {type: camera, name: front, height: 0.22, tilt_deg: -3, fov_deg: 75, width_px: 800, height_px: 600, fps: 20}

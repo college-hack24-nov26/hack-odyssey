@@ -1,0 +1,15 @@
+name: aa_nimh_2000
+kind: battery
+title: AA NiMH cell 2000 mAh (Panasonic eneloop class)
+source: https://www.tinytronics.nl/product_files/006133_Eneloop-BK-3MCDE-datasheet.pdf
+confidence: typical
+mass_kg: 0.027
+notes: 'Datasheet: 2000 mAh minimum, 1.2 V, end voltage 1.0 V, 25 mOhm impedance at 1 kHz (the DC resistance used here is higher), 27 g.'
+params:
+  chemistry: nimh
+  cell_v_nominal: 1.2
+  cell_v_full: 1.4
+  cell_v_cutoff: 1.0
+  capacity_mah: 2000.0
+  r_internal_ohm: 0.04
+  max_continuous_a: 4.0

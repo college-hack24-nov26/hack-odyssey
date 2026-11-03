@@ -1,0 +1,21 @@
+name: quad_250
+kind: multirotor
+description: 250-class racing/inspection quadcopter (about 650 g).
+body: {mass: 0.65, length: 0.25, width: 0.25, height: 0.08}
+params:
+  layout: quad_x
+  arm_length: 0.125
+  thrust_max: 4.0
+  torque_coef: 0.016
+  motor_tau: 0.03
+  drag: 0.05
+  max_tilt_deg: 35
+  max_speed: 12.0
+  max_climb: 4.0
+  max_descent: 3.0
+  max_yaw_rate: 3.5
+sensors:
+  - {type: camera, name: front, forward: 0.1, height: 0.04, tilt_deg: 25, fov_deg: 90, width_px: 320, height_px: 240, fps: 30, noise: 0.01}
+  - {type: imu, name: imu}
+  - {type: pose, name: pose}
+  - {type: battery, name: battery, chemistry: lipo, cells: 4, capacity_mah: 1500}

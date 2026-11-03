@@ -1,0 +1,16 @@
+name: lm2596_buck_module
+kind: regulator
+title: LM2596 buck module (set to 5 V)
+source: typical module specifications (not re-checked in this project)
+confidence: typical
+mass_kg: 0.015
+notes: ''
+params:
+  topology: buck
+  v_out: 5.0
+  i_out_max_a: 3.0
+  efficiency: 0.8
+  v_in_min: 4.5
+  v_in_max: 40.0
+  dropout_v: 1.5
+  quiescent_a: 0.005

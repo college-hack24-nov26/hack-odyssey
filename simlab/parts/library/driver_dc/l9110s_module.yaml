@@ -1,0 +1,18 @@
+name: l9110s_module
+kind: driver_dc
+title: L9110S module
+source: generic marketplace listings
+confidence: assumed
+mass_kg: 0.003
+notes: ''
+params:
+  channels: 2
+  voltage_min: 2.5
+  voltage_max: 12.0
+  continuous_a_per_channel: 0.8
+  peak_a_per_channel: 1.5
+  r_on_ohm: 1.0
+  drop_v: 0.0
+  logic_high_min_v: 2.5
+  gpio_per_channel: 2
+  extra_gpio: 0

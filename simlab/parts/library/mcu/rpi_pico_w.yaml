@@ -1,0 +1,21 @@
+name: rpi_pico_w
+kind: mcu
+title: Raspberry Pi Pico W
+source: Raspberry Pi documentation (typical values)
+confidence: typical
+mass_kg: 0.003
+notes: ''
+params:
+  vin_min: 1.8
+  vin_max: 5.5
+  logic_v: 3.3
+  current_a: 0.05
+  gpio_free: 24
+  interfaces:
+  - i2c
+  - uart
+  - spi
+  - adc
+  - pwm
+  - wifi
+  integrated: []

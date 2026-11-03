@@ -1,0 +1,14 @@
+name: frame_f450_quad
+kind: frame
+title: 450 mm quad frame (F450 class)
+source: generic (typical values; the F450 frame weighs about 280 g)
+confidence: typical
+mass_kg: 0.282
+notes: ''
+params:
+  layout: quad_x
+  arm_length_m: 0.225
+  length_m: 0.45
+  width_m: 0.45
+  height_m: 0.12
+  max_prop_in: 10.0

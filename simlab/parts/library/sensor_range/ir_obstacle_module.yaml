@@ -1,0 +1,20 @@
+name: ir_obstacle_module
+kind: sensor_range
+title: "IR obstacle sensor module (FC-51 class, digital output)"
+source: "generic hobby IR obstacle-avoidance module listings; detection range is set by a small potentiometer"
+confidence: assumed
+mass_kg: 0.004
+notes: "Gives only obstacle / no obstacle (most modules pull OUT low on detection). Typical range 2-30 cm, strongly dependent on the surface colour and on sunlight. Run it from 3.3 V so its output is 3.3 V logic, or put a divider on OUT if it runs from 5 V. Replace these numbers with the ones on your module."
+params:
+  sensor_type: ir_proximity
+  rays: 1
+  fov_deg: 35.0
+  min_range_m: 0.02
+  max_range_m: 0.30
+  noise_m: 0.01
+  rate_hz: 100.0
+  logic_v: 3.3
+  supply_v: 3.3
+  supply_tol: 0.15
+  current_a: 0.02
+  interface: gpio_digital

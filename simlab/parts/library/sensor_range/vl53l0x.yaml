@@ -1,0 +1,20 @@
+name: vl53l0x
+kind: sensor_range
+title: VL53L0X time-of-flight sensor
+source: https://www.st.com/resource/en/datasheet/vl53l0x.pdf
+confidence: datasheet
+mass_kg: 0.002
+notes: Up to 2 m indoors on a white target (about 0.8 m on a grey one), 25 degree field of view, 19 mA while ranging.
+params:
+  sensor_type: tof
+  rays: 1
+  fov_deg: 25.0
+  min_range_m: 0.03
+  max_range_m: 2.0
+  noise_m: 0.02
+  rate_hz: 30.0
+  logic_v: 3.3
+  supply_v: 3.3
+  supply_tol: 0.06
+  current_a: 0.019
+  interface: i2c

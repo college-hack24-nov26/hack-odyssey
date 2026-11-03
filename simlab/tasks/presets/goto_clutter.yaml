@@ -1,0 +1,9 @@
+name: goto_clutter
+task: goto
+description: "Harder: many obstacles, narrow gaps, and randomised mass, friction and motor strength."
+world: {width: 16, depth: 16}
+params: {goal_min_dist: 4, goal_max_dist: 10, obstacles: 14, obstacle_min: 0.25, obstacle_max: 0.8}
+reward: {progress: 1.0, reached: 10.0, collision: -0.5, time: -0.05, action: -0.01}
+episode: {policy_hz: 20}
+randomize: {mass: 0.2, friction: 0.2, motor_strength: 0.15, sensor_noise: 0.5}
+labels: [goal]

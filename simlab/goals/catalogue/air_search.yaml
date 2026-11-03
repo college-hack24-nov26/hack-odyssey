@@ -1,0 +1,30 @@
+id: air_search
+title: Search and watch from the air
+platform: air
+card:
+  title: Watch from the air
+  blurb: A small drone with a camera that flies over an area to find and keep watch on something. Observation only.
+keywords: [drone, drones, quadcopter, quad, multirotor, fly, flying, air, aerial, uav, surveillance, watch, search, patrol, observe, observation, camera]
+task: search_targets
+questions:
+  - id: time
+    text: How long must it stay in the air?
+    default: 1
+    choices:
+      - {label: "About 10 minutes", params: {minutes: 10}}
+      - {label: "About 20 minutes", params: {minutes: 20}}
+      - {label: "About 30 minutes", params: {minutes: 30}}
+  - id: wind
+    text: How windy is the worst day it must handle?
+    default: 1
+    choices:
+      - {label: "Calm, under 5 m/s", params: {wind_ms: 4}}
+      - {label: "Breezy, about 8 m/s", params: {wind_ms: 8}}
+      - {label: "Windy, about 12 m/s", params: {wind_ms: 12}}
+  - id: carry
+    text: What does it carry?
+    default: 0
+    choices:
+      - {label: "Just the camera", params: {payload_kg: 0.0}}
+      - {label: "Camera plus about 0.5 kg extra", params: {payload_kg: 0.5}}
+hazards: air

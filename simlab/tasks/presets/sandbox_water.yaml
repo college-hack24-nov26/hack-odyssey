@@ -1,0 +1,9 @@
+name: sandbox_water
+task: sandbox
+description: Open water with a few pylons; for boats and anything else that floats.
+world: {width: 40, depth: 40, theme: water}
+params: {pillars: 6}
+reward: {}
+episode: {max_time: 900, policy_hz: 20}
+randomize: {}
+labels: []

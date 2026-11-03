@@ -1,0 +1,11 @@
+name: esc_30a
+kind: esc
+title: 30 A brushless ESC (3-4S)
+source: generic listings (typical values)
+confidence: assumed
+mass_kg: 0.009
+notes: ''
+params:
+  max_continuous_a: 30.0
+  v_max: 17.0
+  v_min: 7.0

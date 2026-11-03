@@ -1,0 +1,13 @@
+name: wheel_100mm_rubber
+kind: wheel
+title: 100 mm rubber wheel
+source: generic
+confidence: assumed
+mass_kg: 0.08
+notes: ''
+params:
+  radius_m: 0.05
+  width_m: 0.04
+  friction: 0.8
+  rolling_resistance: 0.03
+  is_track: false

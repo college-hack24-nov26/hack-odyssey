@@ -1,0 +1,14 @@
+name: large_6wd
+kind: ground_wheeled
+description: Large six-wheel skid-steer platform for big sewer trunks.
+body: {mass: 25.0, length: 0.80, width: 0.55, height: 0.25}
+params:
+  drive: skid6wd
+  wheel_radius: 0.08
+  max_speed: 1.0
+  max_accel: 0.8
+  max_yaw_rate: 1.0
+  yaw_gain: 0.655
+  light_intensity: 3.0
+sensors:
+  - {type: camera, name: front, height: 0.32, tilt_deg: -2, fov_deg: 80, width_px: 800, height_px: 600, fps: 25}

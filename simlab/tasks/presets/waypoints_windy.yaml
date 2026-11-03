@@ -1,0 +1,9 @@
+name: waypoints_windy
+task: waypoints
+description: "Harder: gusty wind, and randomised mass, motor strength and sensor noise."
+world: {width: 24, depth: 24, ceiling: 15}
+params: {n_points: 4, spread: 6, min_leg: 3, alt_min: 1.5, alt_max: 4, start: air}
+reward: {progress: 1.0, reached: 5.0, done: 10.0, crash: -10.0, time: -0.02, action: -0.01}
+episode: {policy_hz: 20}
+randomize: {mass: 0.15, motor_strength: 0.1, wind: 4.0, sensor_noise: 0.5}
+labels: [waypoint]

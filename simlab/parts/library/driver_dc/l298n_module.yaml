@@ -1,0 +1,18 @@
+name: l298n_module
+kind: driver_dc
+title: L298N module
+source: ST L298 datasheet (typical saturation voltages summed); not re-checked in this project
+confidence: typical
+mass_kg: 0.03
+notes: 'A bipolar driver: it loses about 2 V, so it is a poor match for a 4.8 V battery.'
+params:
+  channels: 2
+  voltage_min: 5.0
+  voltage_max: 35.0
+  continuous_a_per_channel: 2.0
+  peak_a_per_channel: 3.0
+  r_on_ohm: 0.0
+  drop_v: 2.2
+  logic_high_min_v: 2.3
+  gpio_per_channel: 3
+  extra_gpio: 0

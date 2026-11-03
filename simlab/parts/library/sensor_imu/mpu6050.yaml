@@ -1,0 +1,16 @@
+name: mpu6050
+kind: sensor_imu
+title: MPU-6050 gyro + accelerometer
+source: https://eeshop.unl.edu/pdf/MPU-6050_DataSheet_V3%204-1.pdf
+confidence: datasheet
+mass_kg: 0.002
+notes: Gyro noise 0.05 deg/s rms at 100 Hz bandwidth = 0.00087 rad/s; accelerometer noise 400 ug/rtHz is about 0.04 m/s^2 at 100 Hz.
+params:
+  rate_hz: 100.0
+  gyro_noise: 0.00087
+  accel_noise: 0.04
+  logic_v: 3.3
+  supply_v: 3.3
+  supply_tol: 0.1
+  current_a: 0.0039
+  interface: i2c

@@ -1,0 +1,13 @@
+name: pololu_120_1_hp_4v5
+kind: motor_dc
+title: Pololu 120:1 mini plastic gearmotor HP (Romi), 4.5 V
+source: https://docs.wpilib.org/en/stable/docs/romi-robot/getting-to-know-romi.html
+confidence: typical
+mass_kg: 0.0105
+notes: Speed, currents and stall torque (25 oz*in) from Pololu / WPILib; the mass is an estimate.
+params:
+  voltage_rated: 4.5
+  no_load_rpm: 150.0
+  no_load_current_a: 0.13
+  stall_torque_nm: 0.1765
+  stall_current_a: 1.25

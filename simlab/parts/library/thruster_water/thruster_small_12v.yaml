@@ -1,0 +1,12 @@
+name: thruster_small_12v
+kind: thruster_water
+title: Small 12 V boat thruster (about 6 kgf)
+source: generic marketplace listings
+confidence: assumed
+mass_kg: 0.9
+notes: ''
+params:
+  thrust_max_n: 60.0
+  rated_v: 12.0
+  current_a: 25.0
+  idle_current_a: 0.3

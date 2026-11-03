@@ -1,0 +1,37 @@
+id: water_rescue
+title: Reach a person in the water
+platform: water
+card:
+  title: Rescue on the water
+  blurb: A small boat that goes out to a person in the water, even when it is windy and the water is rough.
+keywords: [boat, boats, rescue, water, sea, lake, river, flood, swimmer, drowning, lifeguard, buoy, lifebuoy, ocean, coast, vessel, ship]
+task: water_rescue
+questions:
+  - id: distance
+    text: How far out must it go?
+    default: 1
+    choices:
+      - {label: "Near the shore, up to 100 m", params: {range_m: 100}}
+      - {label: "Up to 500 m", params: {range_m: 500}}
+      - {label: "Up to 1 km", params: {range_m: 1000}}
+  - id: sea
+    text: How rough is the worst day it must handle?
+    default: 1
+    choices:
+      - {label: "Calm lake or pool", params: {wave_hs: 0.1, wind_ms: 3}}
+      - {label: "Choppy water", params: {wave_hs: 0.3, wind_ms: 8}}
+      - {label: "Rough water", params: {wave_hs: 0.6, wind_ms: 12}}
+  - id: time
+    text: How long must it stay out?
+    default: 1
+    choices:
+      - {label: "About 30 minutes", params: {minutes: 30}}
+      - {label: "About 1 hour", params: {minutes: 60}}
+      - {label: "About 3 hours", params: {minutes: 180}}
+  - id: carry
+    text: Does it carry a lifebuoy or rope?
+    default: 0
+    choices:
+      - {label: "No, it only gets there", params: {payload_kg: 0.0}}
+      - {label: "Yes, about 2 kg", params: {payload_kg: 2.0}}
+hazards: water

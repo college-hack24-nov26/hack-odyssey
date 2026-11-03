@@ -1,0 +1,9 @@
+name: waypoints_long
+task: waypoints
+description: Six waypoints spread over a large area at varied altitudes.
+world: {width: 40, depth: 40, ceiling: 20}
+params: {n_points: 6, spread: 12, min_leg: 4, alt_min: 1.5, alt_max: 6, start: air}
+reward: {progress: 1.0, reached: 5.0, done: 10.0, crash: -10.0, time: -0.02, action: -0.01}
+episode: {policy_hz: 20}
+randomize: {}
+labels: [waypoint]

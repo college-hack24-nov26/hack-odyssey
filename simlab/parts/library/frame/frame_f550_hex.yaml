@@ -1,0 +1,14 @@
+name: frame_f550_hex
+kind: frame
+title: 550 mm hex frame (F550 class)
+source: generic (typical values)
+confidence: typical
+mass_kg: 0.478
+notes: ''
+params:
+  layout: hex
+  arm_length_m: 0.225
+  length_m: 0.55
+  width_m: 0.55
+  height_m: 0.15
+  max_prop_in: 10.0

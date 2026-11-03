@@ -1,0 +1,9 @@
+name: pipe_short
+task: pipe_inspect
+description: "A 16 m pipe with four planted defects in MuJoCo: the quickest way to see the pipe environment."
+world: {}
+params: {map: short_pipe}
+reward: {}
+episode: {max_time: 90, policy_hz: 10}
+randomize: {}
+labels: [crack, leak]

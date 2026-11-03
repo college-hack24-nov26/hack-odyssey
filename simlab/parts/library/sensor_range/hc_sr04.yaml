@@ -1,0 +1,20 @@
+name: hc_sr04
+kind: sensor_range
+title: HC-SR04 ultrasonic range sensor
+source: https://electroschematics.com/wp-content/uploads/2013/07/HCSR04-datasheet-version-1.pdf
+confidence: datasheet
+mass_kg: 0.009
+notes: '5 V, 15 mA, 2 cm - 4 m, 15 degree cone. The echo pin outputs 5 V: use a divider on a 3.3 V controller. The mass is an estimate.'
+params:
+  sensor_type: ultrasonic
+  rays: 1
+  fov_deg: 15.0
+  min_range_m: 0.02
+  max_range_m: 4.0
+  noise_m: 0.003
+  rate_hz: 15.0
+  logic_v: 5.0
+  supply_v: 5.0
+  supply_tol: 0.1
+  current_a: 0.015
+  interface: gpio_trig_echo

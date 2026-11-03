@@ -1,0 +1,21 @@
+name: esp32cam_ai_thinker
+kind: mcu
+title: ESP32-CAM (AI-Thinker) used as the controller
+source: https://www.handsontec.com/dataspecs/module/ESP32-CAM.pdf
+confidence: typical
+mass_kg: 0.01
+notes: '180 mA at 5 V with the flash off, 310 mA flash on; supply 4.5-5.25 V. Almost every pin is shared with the camera or the SD slot: 4 free
+  is an estimate.'
+params:
+  vin_min: 4.5
+  vin_max: 5.25
+  logic_v: 3.3
+  current_a: 0.18
+  gpio_free: 4
+  interfaces:
+  - uart
+  - pwm
+  - wifi
+  - i2c
+  integrated:
+  - camera_ov2640

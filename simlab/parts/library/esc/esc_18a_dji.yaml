@@ -1,0 +1,11 @@
+name: esc_18a_dji
+kind: esc
+title: DJI 18 A opto ESC (3-4S)
+source: https://robotic-controls.com/book/export/html/65
+confidence: typical
+mass_kg: 0.025
+notes: 18 A, 11.1-14.8 V, 3S-4S LiPo.
+params:
+  max_continuous_a: 18.0
+  v_max: 16.8
+  v_min: 9.0

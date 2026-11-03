@@ -1,0 +1,9 @@
+name: land_pad
+task: land
+description: Descend from altitude and touch down gently on the marked pad.
+world: {width: 24, depth: 24, ceiling: 15}
+params: {spread: 3, alt_min: 2, alt_max: 4, land_speed: 1.0}
+reward: {progress: 1.0, landed: 20.0, crash: -10.0, time: -0.02, action: -0.01}
+episode: {policy_hz: 20}
+randomize: {}
+labels: [pad]

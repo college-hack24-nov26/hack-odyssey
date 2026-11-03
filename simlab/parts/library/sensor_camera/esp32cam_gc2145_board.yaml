@@ -1,0 +1,18 @@
+name: esp32cam_gc2145_board
+kind: sensor_camera
+title: "ESP32-CAM-MB with a GC2145 sensor, streaming 96x96 over Wi-Fi (as measured on the user's board)"
+source: "measured in the user's camera sessions (CamStream_fast v2, sensor PID 0x2145, 96x96 at a 16 MHz clock): 8.5-11.6 fps over Wi-Fi; docs/HARDWARE.md"
+confidence: typical
+mass_kg: 0.012
+notes: "Resolution and frame rate are measured. The field of view of this lens was NOT measured (65 degrees is assumed) and neither was the current draw (copied from the OV2640 board). 96x96 is far too small to see real cracks: the stream is for driving and for saving frames, not for detection."
+params:
+  width_px: 96
+  height_px: 96
+  fps_max: 10.0
+  fov_deg: 65.0
+  noise: 0.03
+  supply_v: 5.0
+  supply_tol: 0.05
+  current_a: 0.18
+  interface: wifi_stream
+  integrated_tag: ''

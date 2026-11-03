@@ -1,0 +1,20 @@
+name: arduino_uno
+kind: mcu
+title: Arduino Uno
+source: Arduino documentation (typical values)
+confidence: typical
+mass_kg: 0.025
+notes: 'The range covers both ways to power it: a regulated 5 V on the 5V pin (4.75-5.25 V) or 7-12 V on VIN. Check which you wire.'
+params:
+  vin_min: 4.75
+  vin_max: 12.0
+  logic_v: 5.0
+  current_a: 0.05
+  gpio_free: 16
+  interfaces:
+  - i2c
+  - uart
+  - spi
+  - adc
+  - pwm
+  integrated: []

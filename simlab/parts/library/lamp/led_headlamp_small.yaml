@@ -1,0 +1,12 @@
+name: led_headlamp_small
+kind: lamp
+title: Small white LED headlamp (3 LEDs)
+source: generic
+confidence: assumed
+mass_kg: 0.003
+notes: light_intensity 0.5 is the micro_2wd preset's lamp.
+params:
+  light_intensity: 0.5
+  supply_v: 5.0
+  supply_tol: 0.1
+  current_a: 0.06

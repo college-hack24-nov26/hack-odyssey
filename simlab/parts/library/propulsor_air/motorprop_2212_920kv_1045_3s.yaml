@@ -1,0 +1,16 @@
+name: motorprop_2212_920kv_1045_3s
+kind: propulsor_air
+title: DJI 2212 920KV + 10x4.5 propeller (3S, ESC-limited test)
+source: https://robotic-controls.com/book/export/html/65
+confidence: typical
+mass_kg: 0.062
+notes: 'One experimenter''s test with an 18 A ESC at 12 V gave about 1 lb (4.45 N): the ESC, not the motor, was the limit (the motor is rated
+  15-25 A, 30 A max), so a better ESC gives more thrust. Motor 56 g (measured); the idle current is an estimate.'
+params:
+  ref_voltage: 12.0
+  thrust_max_n_at_ref: 4.45
+  current_max_a_at_ref: 18.0
+  idle_current_a: 0.8
+  prop_diameter_in: 10.0
+  prop_pitch_in: 4.5
+  kv: 920.0

@@ -1,0 +1,16 @@
+name: motorprop_0802_23000kv_40mm_1s
+kind: propulsor_air
+title: BetaFPV 0802SE 23000KV + 40 mm propeller (1S)
+source: https://fpv-db.com/motors/betafpv-0802se-0802/
+confidence: datasheet
+mass_kg: 0.0022
+notes: 'Manufacturer bench: 35.3 g at 4.0 A on 1S with the 40 mm 2-blade propeller. Motor 1.83 g; the propeller mass, pitch and idle current are
+  estimates.'
+params:
+  ref_voltage: 3.8
+  thrust_max_n_at_ref: 0.3462
+  current_max_a_at_ref: 4.0
+  idle_current_a: 0.15
+  prop_diameter_in: 1.57
+  prop_pitch_in: 1.0
+  kv: 23000.0

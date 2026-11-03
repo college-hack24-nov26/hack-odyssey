@@ -1,0 +1,11 @@
+name: esc_40a
+kind: esc
+title: 40 A brushless ESC (3-6S)
+source: generic listings (typical values)
+confidence: assumed
+mass_kg: 0.012
+notes: ''
+params:
+  max_continuous_a: 40.0
+  v_max: 25.2
+  v_min: 7.0

@@ -1,0 +1,35 @@
+id: air
+platform: air
+task: waypoints_easy
+task_params: {}
+threshold: 0.8
+baseline: the built-in position controller with perfect state (no estimator, no GPS errors)
+hazards:
+  - id: wind
+    title: Wind
+    plain: How hard the wind blows. The drone has to lean into it to hold its place.
+    unit: m/s
+    knob: wind_ms
+    levels: [0, 4, 8, 12, 16, 20]
+    ask: wind_ms
+    source: "Small search and rescue drones are rated for about 10-17 m/s sustained wind (DHS FRROST assessment, vendor sheets)."
+    fix: "More thrust (bigger motors and propellers), a lower-drag airframe, or a bigger battery for the extra current."
+faults:
+  - id: rotor_out
+    title: A rotor fails
+    plain: One of the rotors stops producing thrust.
+    hazards: {rotor_eff: [0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]}
+    fix: "Flight controllers with fault-tolerant control on six or eight rotors can fly on with one out; the simple controller here cannot."
+  - id: weak_motors
+    title: Weak motors
+    plain: Every motor delivers only 70 % of its rated thrust (worn motors, a weak battery, cold weather).
+    hazards: {rotor_eff: [0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7]}
+    fix: "More thrust to spare: aim for at least twice the weight."
+not_tested:
+  - GPS loss or drift, compass errors, and the radio link dropping
+  - Cold batteries and flight time in cold weather
+  - Gusts from buildings or terrain, rain, and fog
+  - Battery running out in flight (the baseline flies short missions)
+  - Payload shifting or dropping, and a camera gimbal
+  - Collisions with people, wires, trees and other aircraft
+  - "Any other aircraft: this tool only observes and does not intercept or disable"

@@ -1,0 +1,50 @@
+id: sewer
+platform: ground
+task: pipe_short
+task_params: {}
+threshold: 0.8
+baseline: the sewer pipeline's own path follower (follows the pipe route, stops for obstacles it can see)
+hazards:
+  - id: grip
+    title: Slippery floor
+    plain: "How slippery the floor is. Dry concrete grips at about 0.8, wet sludge can be below 0.2. In this simulator grip limits acceleration and sideways force on a flat floor; wheels spinning on a slope or in a curved pipe are not modelled, so a pass here does not mean slime is harmless."
+    unit: grip
+    knob: grip_mu
+    levels: [0.8, 0.4, 0.2, 0.1, 0.05]
+    source: "Wheel slip on sludge, grease and displaced joints is the usual reason sewer robots get stuck (field reports, IAARC, Thames Water trial)."
+    fix: "Softer, wider or tracked wheels, a heavier rover, or more weight on the driven wheels."
+  - id: resistance
+    title: Mud and debris
+    plain: How much of the motors' pulling force is used up by mud, sludge and small debris (0 = none, 1 = all of it).
+    unit: share
+    knob: drag_ms2
+    scale: max_accel
+    levels: [0.0, 0.3, 0.6, 0.85, 0.97]
+    source: "Sludge deposits and clogs are the most common obstacles in waste pipes."
+    fix: "Stronger motors or a lower gear ratio (more pulling force), bigger wheels or tracks."
+  - id: lag
+    title: Slow commands
+    plain: How late the rover obeys commands (a slow Wi-Fi or USB link).
+    unit: s
+    knob: cmd_delay_s
+    levels: [0.0, 0.2, 0.5, 1.0]
+    source: "A tethered link is near instant; Wi-Fi in pipes can stall for a second or more."
+    fix: "A tether, or on-board decisions that do not wait for the laptop."
+faults:
+  - id: left_motor_dead
+    title: A motor fails
+    plain: The left drive motor stops working.
+    hazards: {side_gain: [0.0, 1.0]}
+    fix: "A drive layout with more motors (4WD or tracks) keeps some drive on both sides."
+  - id: lost_commands
+    title: Lost commands
+    plain: A third of the commands sent to the rover never arrive.
+    hazards: {cmd_dropout: 0.3}
+    fix: "Make sure the rover stops itself when commands stop (the rover firmware does within 1 s)."
+not_tested:
+  - A blocked pipe or a fully clogged section (the pipe world has no blockage objects yet)
+  - Darkness, fogged or dirty lens, and a lamp that fails (nothing degrades the camera here)
+  - Water flowing in the pipe, standing water, steps and displaced joints
+  - "Whether a detector sees real cracks and leaks: simulated cracks only, and a 96x96 camera cannot resolve real ones"
+  - Gas, explosive atmospheres and corrosion
+  - A flat battery partway along the pipe, and getting the rover back out

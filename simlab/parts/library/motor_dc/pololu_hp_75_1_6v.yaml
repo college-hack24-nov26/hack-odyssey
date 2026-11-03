@@ -1,0 +1,13 @@
+name: pololu_hp_75_1_6v
+kind: motor_dc
+title: Pololu 75:1 micro metal gearmotor HP 6 V
+source: https://www.pololu.com/product/2215/specs
+confidence: datasheet
+mass_kg: 0.0095
+notes: Published max output power 1.4 W.
+params:
+  voltage_rated: 6.0
+  no_load_rpm: 410.0
+  no_load_current_a: 0.1
+  stall_torque_nm: 0.12749
+  stall_current_a: 1.6

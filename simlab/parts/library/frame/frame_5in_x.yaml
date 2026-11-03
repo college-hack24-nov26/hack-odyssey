@@ -1,0 +1,14 @@
+name: frame_5in_x
+kind: frame
+title: 5-inch freestyle / inspection frame (220 mm)
+source: generic (typical values)
+confidence: assumed
+mass_kg: 0.115
+notes: ''
+params:
+  layout: quad_x
+  arm_length_m: 0.115
+  length_m: 0.23
+  width_m: 0.23
+  height_m: 0.07
+  max_prop_in: 5.1

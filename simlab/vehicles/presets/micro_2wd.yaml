@@ -1,0 +1,15 @@
+name: micro_2wd
+kind: ground_wheeled
+description: ESP32-CAM + DRV8833 hobby chassis with TT gear motors (two driven wheels and a caster).
+body: {mass: 0.5, length: 0.16, width: 0.12, height: 0.055}
+params:
+  drive: diff2wd
+  wheel_radius: 0.0325
+  max_speed: 0.25
+  max_accel: 0.5
+  max_yaw_rate: 2.0
+  yaw_gain: 0.865
+  light_intensity: 0.5
+sensors:
+  # Mounted tilted UP: from 7.5 cm a downward camera sees only floor, walls need about -10 deg.
+  - {type: camera, name: front, height: 0.075, tilt_deg: -10, fov_deg: 62, width_px: 640, height_px: 480, fps: 12}

@@ -1,0 +1,9 @@
+name: hover_hold
+task: waypoints
+description: Fly to one point and hold position there for 8 seconds.
+world: {width: 24, depth: 24, ceiling: 15}
+params: {n_points: 1, spread: 3, min_leg: 1, alt_min: 1.5, alt_max: 2.5, hold_time: 8, start: air}
+reward: {progress: 1.0, reached: 5.0, done: 10.0, crash: -10.0, time: -0.02, action: -0.01}
+episode: {policy_hz: 20}
+randomize: {}
+labels: [waypoint]

@@ -1,0 +1,21 @@
+name: hex_450
+kind: multirotor
+description: Six-rotor survey/inspection drone (about 1.8 kg); keeps flying with margin for a camera payload.
+body: {mass: 1.8, length: 0.55, width: 0.55, height: 0.15}
+params:
+  layout: hex
+  arm_length: 0.225
+  thrust_max: 6.5
+  torque_coef: 0.02
+  motor_tau: 0.06
+  drag: 0.12
+  max_tilt_deg: 30
+  max_speed: 10.0
+  max_climb: 3.0
+  max_descent: 2.5
+  max_yaw_rate: 2.0
+sensors:
+  - {type: camera, name: front, forward: 0.2, height: 0.05, tilt_deg: 30, fov_deg: 80, width_px: 640, height_px: 480, fps: 20}
+  - {type: imu, name: imu}
+  - {type: pose, name: pose}
+  - {type: battery, name: battery, chemistry: lipo, cells: 6, capacity_mah: 5000}

@@ -1,0 +1,9 @@
+name: goto_empty
+task: goto
+description: "Warm-up: drive to a goal in an empty arena (no obstacles)."
+world: {width: 14, depth: 14}
+params: {goal_min_dist: 2, goal_max_dist: 8, obstacles: 0}
+reward: {progress: 1.0, reached: 10.0, collision: -0.5, time: -0.05, action: -0.01}
+episode: {policy_hz: 20}
+randomize: {}
+labels: [goal]

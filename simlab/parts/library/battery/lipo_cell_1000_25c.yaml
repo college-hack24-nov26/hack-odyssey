@@ -1,0 +1,15 @@
+name: lipo_cell_1000_25c
+kind: battery
+title: LiPo cell 1000 mAh 25C (generic)
+source: generic
+confidence: assumed
+mass_kg: 0.026
+notes: ''
+params:
+  chemistry: lipo
+  cell_v_nominal: 3.7
+  cell_v_full: 4.2
+  cell_v_cutoff: 3.3
+  capacity_mah: 1000.0
+  r_internal_ohm: 0.03
+  max_continuous_a: 25.0

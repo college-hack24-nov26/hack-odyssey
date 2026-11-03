@@ -1,0 +1,30 @@
+id: sewer_inspect
+title: Inspect sewer pipes for cracks and leaks
+platform: ground
+card:
+  title: Inspect pipes
+  blurb: A small rover with a camera and a lamp that drives through pipes and looks for cracks and leaks.
+keywords: [sewer, sewers, pipe, pipes, pipeline, drain, drains, culvert, manhole, tunnel, crack, cracks, leak, leaks, inspect, inspection, crawler, rover, underground]
+task: pipe_short
+questions:
+  - id: pipe
+    text: How wide are the pipes?
+    default: 0
+    choices:
+      - {label: "Small, about 30 cm", params: {pipe_d: 0.30}}
+      - {label: "Medium, about 50 cm", params: {pipe_d: 0.50}}
+      - {label: "Large, about 90 cm", params: {pipe_d: 0.90}}
+  - id: distance
+    text: How far must it go on one battery?
+    default: 0
+    choices:
+      - {label: "A short test pipe, about 5 m", params: {distance_m: 5}}
+      - {label: "One street block, about 50 m", params: {distance_m: 50}}
+      - {label: "A long run, about 200 m", params: {distance_m: 200}}
+  - id: inside
+    text: What is it like inside?
+    default: 0
+    choices:
+      - {label: "Dry and dark", params: {wet: 0}}
+      - {label: "Wet, with some sludge", params: {wet: 1}}
+hazards: sewer

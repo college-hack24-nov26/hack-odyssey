@@ -1,0 +1,13 @@
+name: gearmotor_12v_200rpm
+kind: motor_dc
+title: 12 V geared DC motor 200 rpm (generic 25 mm class)
+source: generic marketplace listings; replace with your motor's datasheet
+confidence: assumed
+mass_kg: 0.085
+notes: Round numbers for a typical 12 V gearmotor; check yours.
+params:
+  voltage_rated: 12.0
+  no_load_rpm: 200.0
+  no_load_current_a: 0.15
+  stall_torque_nm: 0.49033
+  stall_current_a: 1.8

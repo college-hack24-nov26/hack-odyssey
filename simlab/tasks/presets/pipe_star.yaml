@@ -1,0 +1,9 @@
+name: pipe_star
+task: pipe_inspect
+description: "The five-branch sewer star in MuJoCo (fast), with chambers, branches in every direction and 16 planted defects."
+world: {}
+params: {map: star_five_goals}
+reward: {}
+episode: {max_time: 300, policy_hz: 10}
+randomize: {}
+labels: [crack, leak]

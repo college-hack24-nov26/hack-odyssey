@@ -1,0 +1,9 @@
+name: goto_open
+task: goto
+description: Drive to a goal across an open arena with a few obstacles.
+world: {width: 14, depth: 14}
+params: {goal_min_dist: 3, goal_max_dist: 8, obstacles: 5, obstacle_min: 0.3, obstacle_max: 0.9}
+reward: {progress: 1.0, reached: 10.0, collision: -0.5, time: -0.05, action: -0.01}
+episode: {policy_hz: 20}
+randomize: {}
+labels: [goal]

@@ -1,0 +1,16 @@
+name: mt3608_boost_module
+kind: regulator
+title: MT3608 boost module (adjustable, set to 5 V)
+source: https://static.datasheets.com/doc/ec69a9ea-fa22-4383-b0f6-12a9a4ae558c-aerosemi-mt3608-ds.pdf
+confidence: typical
+mass_kg: 0.006
+notes: 'Chip: 2-24 V in, 4 A switch limit, up to 93 % efficient. Seller modules quote 2 A out; real output current at a low input voltage is less.'
+params:
+  topology: boost
+  v_out: 5.0
+  i_out_max_a: 2.0
+  efficiency: 0.9
+  v_in_min: 2.0
+  v_in_max: 24.0
+  dropout_v: 0.0
+  quiescent_a: 0.002

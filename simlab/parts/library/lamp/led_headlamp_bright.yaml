@@ -1,0 +1,12 @@
+name: led_headlamp_bright
+kind: lamp
+title: Bright white LED headlamp (1 W class)
+source: generic
+confidence: assumed
+mass_kg: 0.01
+notes: ''
+params:
+  light_intensity: 1.5
+  supply_v: 5.0
+  supply_tol: 0.1
+  current_a: 0.35

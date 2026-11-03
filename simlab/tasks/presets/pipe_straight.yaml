@@ -1,0 +1,9 @@
+name: pipe_straight
+task: pipe_inspect
+description: A straight pipe with a T-junction in MuJoCo (fast). Drive to the east goal post; the camera sees the planted cracks and leaks.
+world: {}
+params: {map: straight_t}
+reward: {}
+episode: {max_time: 120, policy_hz: 10}
+randomize: {}
+labels: [crack, leak]

@@ -1,0 +1,15 @@
+name: li_ion_18650_25r
+kind: battery
+title: 18650 Li-ion cell 2500 mAh (Samsung INR18650-25R)
+source: https://docs.telitpower.com/pdf/li-ion/INR18650-25R.pdf
+confidence: datasheet
+mass_kg: 0.0438
+notes: 'Datasheet: 3.6 V, 4.2 V charge, 2.5 V end, 20 A continuous, DC resistance about 22 mOhm, 43.8 g.'
+params:
+  chemistry: liion
+  cell_v_nominal: 3.6
+  cell_v_full: 4.2
+  cell_v_cutoff: 2.5
+  capacity_mah: 2500.0
+  r_internal_ohm: 0.022
+  max_continuous_a: 20.0

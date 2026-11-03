@@ -1,0 +1,11 @@
+name: esc_5a_micro
+kind: esc
+title: Micro brushless ESC 5 A (1S)
+source: generic listings (typical values)
+confidence: assumed
+mass_kg: 0.002
+notes: ''
+params:
+  max_continuous_a: 5.0
+  v_max: 4.4
+  v_min: 3.0

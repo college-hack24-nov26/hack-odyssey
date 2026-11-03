@@ -1,0 +1,15 @@
+name: lead_acid_12v_7ah
+kind: battery
+title: 12 V 7 Ah sealed lead-acid battery (one 6-cell unit)
+source: generic datasheet values
+confidence: typical
+mass_kg: 2.0
+notes: ''
+params:
+  chemistry: lead
+  cell_v_nominal: 12.0
+  cell_v_full: 13.0
+  cell_v_cutoff: 10.5
+  capacity_mah: 7000.0
+  r_internal_ohm: 0.03
+  max_continuous_a: 20.0

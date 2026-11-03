@@ -1,0 +1,11 @@
+name: hull_box_1m2
+kind: hull
+title: 1.2 m displacement hull
+source: matches the boat_small preset
+confidence: assumed
+mass_kg: 4.0
+notes: ''
+params:
+  length_m: 1.2
+  width_m: 0.5
+  height_m: 0.3

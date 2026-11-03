@@ -1,0 +1,9 @@
+name: sandbox
+task: sandbox
+description: An open arena with four pillars and no goal; place any machine in it and drive it yourself.
+world: {width: 24, depth: 24, theme: grid}
+params: {pillars: 4}
+reward: {}
+episode: {max_time: 900, policy_hz: 20}
+randomize: {}
+labels: []

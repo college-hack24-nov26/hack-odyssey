@@ -1,0 +1,12 @@
+name: thruster_outboard_450n
+kind: thruster_water
+title: Electric outboard, 450 N
+source: generic (typical values)
+confidence: assumed
+mass_kg: 8.0
+notes: ''
+params:
+  thrust_max_n: 450.0
+  rated_v: 48.0
+  current_a: 60.0
+  idle_current_a: 0.5

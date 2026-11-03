@@ -1,0 +1,9 @@
+name: search_targets
+task: search
+description: Find three target objects (crate, barrel, ball) among six lookalike distractors; also the scene detectors are trained on.
+world: {width: 20, depth: 20}
+params: {n_targets: 3, n_distractors: 6, find_range: 4.0, altitude: 2.5}
+reward: {found: 5.0, done: 10.0, time: -0.02, action: -0.01, collision: -0.5, crash: -10.0}
+episode: {policy_hz: 20}
+randomize: {}
+labels: [crate, barrel, ball]

@@ -1,0 +1,13 @@
+name: wheel_85mm
+kind: wheel
+title: 85 mm rubber wheel
+source: generic
+confidence: assumed
+mass_kg: 0.045
+notes: ''
+params:
+  radius_m: 0.0425
+  width_m: 0.03
+  friction: 0.8
+  rolling_resistance: 0.03
+  is_track: false

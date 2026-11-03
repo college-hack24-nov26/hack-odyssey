@@ -1,0 +1,14 @@
+name: frame_micro_90mm
+kind: frame
+title: 90 mm micro frame
+source: generic (typical values)
+confidence: assumed
+mass_kg: 0.012
+notes: ''
+params:
+  layout: quad_x
+  arm_length_m: 0.045
+  length_m: 0.09
+  width_m: 0.09
+  height_m: 0.03
+  max_prop_in: 1.6

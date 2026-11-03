@@ -1,0 +1,13 @@
+name: n20_300rpm_6v
+kind: motor_dc
+title: N20 micro gearmotor 300 rpm, 6 V (generic)
+source: generic marketplace listings; replace with your motor's datasheet
+confidence: assumed
+mass_kg: 0.011
+notes: N20 motors vary widely; these are round numbers for a typical one.
+params:
+  voltage_rated: 6.0
+  no_load_rpm: 300.0
+  no_load_current_a: 0.07
+  stall_torque_nm: 0.04903
+  stall_current_a: 0.8

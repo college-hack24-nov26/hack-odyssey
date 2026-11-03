@@ -1,0 +1,18 @@
+name: drv8833_module_pwp
+kind: driver_dc
+title: DRV8833 module (PWP / RTY chip package)
+source: https://www.ti.com/lit/ds/symlink/drv8833.pdf
+confidence: datasheet
+mass_kg: 0.002
+notes: 1.5 A RMS / 2 A peak per bridge at VM = 5 V, HS+LS on-resistance 360 mOhm. extra_gpio = nSLEEP and nFAULT.
+params:
+  channels: 2
+  voltage_min: 2.7
+  voltage_max: 10.8
+  continuous_a_per_channel: 1.5
+  peak_a_per_channel: 2.0
+  r_on_ohm: 0.36
+  drop_v: 0.0
+  logic_high_min_v: 2.0
+  gpio_per_channel: 2
+  extra_gpio: 2

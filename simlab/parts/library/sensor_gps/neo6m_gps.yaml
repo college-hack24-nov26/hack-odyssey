@@ -1,0 +1,15 @@
+name: neo6m_gps
+kind: sensor_gps
+title: u-blox NEO-6M GPS
+source: https://content.u-blox.com/sites/default/files/products/documents/NEO-6_DataSheet_(GPS.G6-HW-09005).pdf
+confidence: typical
+mass_kg: 0.012
+notes: 2.5 m horizontal accuracy (datasheet); supply current is typical. Does not work indoors or in a pipe.
+params:
+  pos_noise_m: 2.5
+  rate_hz: 1.0
+  logic_v: 3.3
+  supply_v: 3.3
+  supply_tol: 0.1
+  current_a: 0.045
+  interface: uart

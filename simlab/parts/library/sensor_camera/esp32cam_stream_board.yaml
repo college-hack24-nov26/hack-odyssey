@@ -1,0 +1,19 @@
+name: esp32cam_stream_board
+kind: sensor_camera
+title: ESP32-CAM as a Wi-Fi camera board (separate from the controller)
+source: https://www.handsontec.com/dataspecs/module/ESP32-CAM.pdf ; docs/HARDWARE.md
+confidence: typical
+mass_kg: 0.01
+notes: Streams MJPEG over Wi-Fi to the laptop, so it uses no pins on the controller. About 12 fps at 640x480 in practice; OV2640 field of view
+  is roughly 62-66 degrees.
+params:
+  width_px: 640
+  height_px: 480
+  fps_max: 12.0
+  fov_deg: 65.0
+  noise: 0.02
+  supply_v: 5.0
+  supply_tol: 0.05
+  current_a: 0.18
+  interface: wifi_stream
+  integrated_tag: ''

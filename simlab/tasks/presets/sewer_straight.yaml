@@ -1,0 +1,9 @@
+name: sewer_straight
+task: sewer_drive
+description: A straight sewer with a T-junction, simulated by Webots (slow to start, since Webots has to launch).
+world: {}
+params: {map: straight_t}
+reward: {}
+episode: {max_time: 120, policy_hz: 12}
+randomize: {}
+labels: []

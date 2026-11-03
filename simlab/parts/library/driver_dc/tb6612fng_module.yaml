@@ -1,0 +1,19 @@
+name: tb6612fng_module
+kind: driver_dc
+title: TB6612FNG module
+source: https://www.pololu.com/file/0J86/TB6612FNG.pdf
+confidence: datasheet
+mass_kg: 0.004
+notes: 1.2 A average / 3.2 A peak; 0.5 Ohm upper+lower on-resistance. Output current only 1 A below VM 4.5 V and 0.4 A below that. Logic threshold
+  is typical.
+params:
+  channels: 2
+  voltage_min: 2.5
+  voltage_max: 13.5
+  continuous_a_per_channel: 1.2
+  peak_a_per_channel: 3.2
+  r_on_ohm: 0.5
+  drop_v: 0.0
+  logic_high_min_v: 2.0
+  gpio_per_channel: 3
+  extra_gpio: 1

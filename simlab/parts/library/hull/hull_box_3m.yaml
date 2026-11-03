@@ -1,0 +1,11 @@
+name: hull_box_3m
+kind: hull
+title: 3 m work-boat hull
+source: matches the boat_workboat preset
+confidence: assumed
+mass_kg: 70.0
+notes: ''
+params:
+  length_m: 3.0
+  width_m: 1.2
+  height_m: 0.7
