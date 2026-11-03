@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sewerbot</title>
+<link rel="stylesheet" href="/static/style.css">
+<link rel="stylesheet" href="/lab-static/lab.css">
+</head>
+<body>
+<header>
+  <div class="brand">Sewer<span>bot</span></div>
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="goal" class="active">Goal</button>
+    <button role="tab" data-tab="lab">Lab</button>
+    <button role="tab" data-tab="build">Builder</button>
+    <button role="tab" data-tab="train">Train</button>
+    <button role="tab" data-tab="sim">Sewer (Webots)</button>
+    <button role="tab" data-tab="hw">Hardware</button>
+  </nav>
+  <div class="pills" id="pills"></div>
+</header>
+
+<main>
+<!-- =========================== LAB (any machine; markup built by lab.js) =========================== -->
+<section id="tab-goal" class="grid"></section>
+<section id="tab-lab" class="grid" hidden></section>
+
+<!-- =========================== BUILDER (your hardware as a simulated machine; markup built by builder.js) =========================== -->
+<section id="tab-build" class="grid" hidden></section>
+
+<!-- =========================== TRAIN (RL policies; markup built by train.js) =========================== -->
+<section id="tab-train" class="grid" hidden></section>
+
+<!-- =========================== SEWER SIMULATION (Webots) =========================== -->
+<section id="tab-sim" class="grid" hidden>
+  <div class="col">
+    <div class="card">
+      <h3>Scenario</h3>
+      <label for="s-map">Sewer map</label>
+      <select id="s-map"></select>
+      <div class="hint" id="s-mapinfo"></div>
+      <label for="s-rover">Rover type</label>
+      <select id="s-rover"></select>
+      <div class="row">
+        <div><label for="s-len">Length (cm)</label><input id="s-len" type="number" min="8" max="120" step="1"></div>
+        <div><label for="s-wid">Width (cm)</label><input id="s-wid" type="number" min="6" max="90" step="1"></div>
+      </div>
+      <label for="s-speed">Max speed: <b id="s-speedv"></b> m/s</label>
+      <input id="s-speed" type="range" min="0.05" max="1.5" step="0.05">
+      <label for="s-drive">Drive</label>
+      <select id="s-drive">
+        <option value="diff2wd">2 wheels + casters (differential)</option>
+        <option value="skid4wd">4 wheels (skid-steer)</option>
+        <option value="skid6wd">6 wheels (skid-steer)</option>
+        <option value="tracked">Tracked crawler</option>
+      </select>
+      <div class="chips" id="s-fit" aria-live="polite"></div>
+    </div>
+
+    <div class="card">
+      <h3>Mission</h3>
+      <div class="row">
+        <select id="s-mission" aria-label="Mission mode">
+          <option value="manual">Manual drive</option>
+          <option value="goto">Go to goal post</option>
+          <option value="inspect_all">Inspect all goals</option>
+        </select>
+        <select id="s-goal" aria-label="Goal post"></select>
+      </div>
+      <label for="s-det">Detector</label>
+      <select id="s-det"></select>
+      <div class="row">
+        <div><label for="s-amb">Chamber light</label><input id="s-amb" type="range" min="0" max="1" step="0.05" value="0.35"></div>
+        <div><label for="s-mode">Sim speed</label><select id="s-mode"><option value="realtime">Real time</option><option value="fast">Fast (no wait)</option></select></div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn primary" id="s-start">Start</button>
+        <button class="btn danger" id="s-stop">Stop</button>
+      </div>
+      <p class="note" id="s-msg"></p>
+    </div>
+
+    <div class="card">
+      <h3>Manual drive <span class="hint">arrows / WASD</span></h3>
+      <div class="pad" id="s-pad">
+        <span></span><button class="btn" data-k="up" aria-label="forward">&#9650;</button><span></span>
+        <button class="btn" data-k="left" aria-label="turn left">&#9664;</button><button class="btn" data-k="down" aria-label="reverse">&#9660;</button><button class="btn" data-k="right" aria-label="turn right">&#9654;</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="card">
+      <h3>Rover camera <span id="s-detname" class="hint"></span></h3>
+      <div class="video"><img id="s-video" alt="Rover camera with detections"></div>
+      <div class="stats">
+        <div class="stat"><b id="s-st-link">-</b><span>link</span></div>
+        <div class="stat"><b id="s-st-mis">-</b><span>mission</span></div>
+        <div class="stat"><b id="s-st-fps">-</b><span>camera fps</span></div>
+        <div class="stat"><b id="s-st-det">-</b><span>detector ms</span></div>
+        <div class="stat"><b id="s-st-def">0</b><span>defects found</span></div>
+      </div>
+    </div>
+    <div class="two">
+      <div class="card">
+        <h3>Sewer map <label class="hint" style="display:inline;margin:0"><input type="checkbox" id="s-truth"> show truth</label></h3>
+        <svg class="map" id="s-svg" viewBox="0 0 100 60" role="img" aria-label="Sewer map with rover and defects"></svg>
+        <div class="chips"><span class="chip">&#9679; <span style="color:var(--crack)">crack</span></span><span class="chip">&#9679; <span style="color:var(--leak)">leak</span></span><span class="chip">&#9711; <span style="color:var(--ok)">truth</span></span><span class="chip">&#9650; rover</span></div>
+      </div>
+      <div class="card">
+        <h3>Findings <a id="s-report" class="hint" href="#" target="_blank" hidden>open report</a></h3>
+        <div id="s-eval" class="hint"></div>
+        <table><thead><tr><th>#</th><th>type</th><th>where</th><th>size</th><th></th></tr></thead><tbody id="s-defects"></tbody></table>
+        <div class="log" id="s-log" style="margin-top:10px"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================== HARDWARE =========================== -->
+<section id="tab-hw" class="grid" hidden>
+  <div class="col">
+    <div class="card">
+      <h3>Connect</h3>
+      <label for="h-rover">ESP32 rover: Wi-Fi address (IP or IP:port) <b>or</b> USB port (COM6)</label>
+      <input id="h-rover" type="text" list="h-ports" placeholder="192.168.1.50   or   COM6">
+      <datalist id="h-ports"></datalist>
+      <div class="row tight"><button class="btn small" id="h-findports">Find USB ports</button><span class="hint" id="h-portnote"></span></div>
+      <label for="h-cam">ESP32-CAM stream URL</label>
+      <input id="h-cam" type="text" placeholder="http://192.168.1.51:81/stream">
+      <label for="h-det">Detector</label>
+      <select id="h-det"></select>
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" id="h-connect">Connect</button>
+        <button class="btn" id="h-disconnect">Disconnect</button>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn small" id="h-mock">Try with emulator</button>
+        <button class="btn small" id="h-mockusb">Try USB emulator</button>
+        <button class="btn small" id="h-mockstop">Stop emulator</button>
+      </div>
+      <p class="note">The emulator streams simulator frames and mimics the rover firmware, so everything on this tab works without the boards.</p>
+    </div>
+
+    <div class="card" id="h-armcard" hidden>
+      <h3>Before you drive <span id="h-armpill" class="pill warn">locked</span></h3>
+      <div id="h-checks"></div>
+      <div class="row" style="margin-top:8px"><button class="btn primary" id="h-arm">Unlock drive controls</button><button class="btn" id="h-disarm">Lock</button></div>
+      <p class="note">The USB rover is a real machine. Controls stay locked until every box is ticked; Stop always works. The rover stops by itself within 1 s if this program stops talking to it.</p>
+    </div>
+
+    <div class="card">
+      <h3>Rover &amp; pipe setup</h3>
+      <div class="row">
+        <div><label for="h-len">Length (cm)</label><input id="h-len" type="number" step="0.5"></div>
+        <div><label for="h-wid">Width (cm)</label><input id="h-wid" type="number" step="0.5"></div>
+      </div>
+      <div class="row">
+        <div><label for="h-ch">Camera height (cm)</label><input id="h-ch" type="number" step="0.5"></div>
+        <div><label for="h-ct">Tilt (deg, - = up)</label><input id="h-ct" type="number" step="1"></div>
+      </div>
+      <div class="row">
+        <div><label for="h-fov">Camera FOV (deg)</label><input id="h-fov" type="number" step="1"></div>
+        <div><label for="h-pipe">Test pipe &#8960; (cm)</label><input id="h-pipe" type="number" step="1"></div>
+      </div>
+      <button class="btn small" id="h-setup" style="margin-top:10px">Save setup</button>
+      <div class="chips" id="h-fit"></div>
+      <p class="note">Camera tip: mount the ESP32-CAM tilted <b>up</b> ~10&deg;. From a low rover a level camera sees mostly floor.</p>
+    </div>
+
+    <div class="card">
+      <h3>Calibration</h3>
+      <details open><summary>1 &middot; Speed</summary>
+        <div class="row"><div><label for="c-sv">Command (m/s)</label><input id="c-sv" type="number" value="0.15" step="0.01"></div>
+        <div><label for="c-st">Seconds</label><input id="c-st" type="number" value="4" step="0.5"></div></div>
+        <button class="btn small" id="c-srun">Drive</button>
+        <label for="c-sm">Measured distance (cm)</label><div class="row"><input id="c-sm" type="number" step="0.5"><button class="btn small" id="c-sapply" style="flex:0 0 auto">Apply</button></div>
+      </details>
+      <details><summary>2 &middot; Turning</summary>
+        <div class="row"><div><label for="c-wv">Command (rad/s)</label><input id="c-wv" type="number" value="1.0" step="0.1"></div>
+        <div><label for="c-wt">Seconds</label><input id="c-wt" type="number" value="3" step="0.5"></div></div>
+        <button class="btn small" id="c-wrun">Spin</button>
+        <label for="c-wm">Measured turn (degrees)</label><div class="row"><input id="c-wm" type="number" step="5"><button class="btn small" id="c-wapply" style="flex:0 0 auto">Apply</button></div>
+      </details>
+      <p class="note">Values are stored in the ESP32's flash. Skid-steer rovers turn less than ideal: the measured yaw gain compensates.</p>
+      <p class="note" id="c-usbnote" hidden>USB rover: <b>Drive</b> and <b>Spin</b> run at the current speed level (the command boxes are ignored). Measure what the rover did and press Apply: the speed and turn rate are stored for this level.</p>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="card">
+      <h3>ESP32-CAM <span id="h-detname" class="hint"></span></h3>
+      <div class="video"><img id="h-video" alt="ESP32-CAM view with detections"></div>
+      <div class="stats">
+        <div class="stat"><b id="h-st-rover">-</b><span>rover link</span></div>
+        <div class="stat"><b id="h-st-cam">-</b><span>camera</span></div>
+        <div class="stat"><b id="h-st-fps">-</b><span>camera fps</span></div>
+        <div class="stat"><b id="h-st-det">-</b><span>detector ms</span></div>
+        <div class="stat"><b id="h-st-bat">-</b><span>battery V</span></div>
+        <div class="stat"><b id="h-st-rssi">-</b><span>Wi-Fi dBm</span></div>
+      </div>
+      <div class="bar" style="margin-top:8px" title="battery"><i id="h-bat" style="width:0"></i></div>
+      <p class="note warn" id="h-warn"></p>
+    </div>
+
+    <div class="two">
+      <div class="card">
+        <h3>Drive <span class="hint">hold a button or use arrows / WASD</span></h3>
+        <div class="pad" id="h-pad">
+          <span></span><button class="btn" data-k="up" aria-label="forward">&#9650;</button><span></span>
+          <button class="btn" data-k="left" aria-label="turn left">&#9664;</button><button class="btn" data-k="down" aria-label="reverse">&#9660;</button><button class="btn" data-k="right" aria-label="turn right">&#9654;</button>
+        </div>
+        <label for="h-speed">Speed: <b id="h-speedv"></b> m/s</label>
+        <input id="h-speed" type="range" min="0.03" max="0.4" step="0.01" value="0.12">
+        <div class="row" style="margin-top:8px"><button class="btn danger" id="h-stop">STOP</button><button class="btn small" id="h-reset">Reset battery latch</button></div>
+        <div class="kv" style="margin-top:10px"><span>Distance</span><b id="h-s">0 m</b><span>Fault pin</span><b id="h-fault">-</b><span>Latency</span><b id="h-rtt">-</b></div>
+        <div id="h-usbbox" hidden>
+          <label for="h-level">Speed level: <b id="h-levelv"></b> (100-255)</label>
+          <input id="h-level" type="range" min="100" max="255" step="5" value="180">
+          <div class="kv"><span>Obstacle ahead</span><b id="h-dist">-</b><span>IR sensor</span><b id="h-ir">-</b><span>Rover says</span><b id="h-line">-</b></div>
+          <p class="note warn" id="h-blocked"></p>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Findings</h3>
+        <table><thead><tr><th>#</th><th>type</th><th>at</th><th>size</th><th></th></tr></thead><tbody id="h-defects"></tbody></table>
+        <div class="log" id="h-log" style="margin-top:10px"></div>
+      </div>
+    </div>
+
+    <div class="two">
+      <div class="card">
+        <h3>Capture &amp; replay</h3>
+        <div class="row"><button class="btn small" id="h-cap">Save frame</button>
+          <select id="h-auto" aria-label="auto capture"><option value="0">Auto-capture off</option><option value="2">every 2 s</option><option value="5">every 5 s</option></select></div>
+        <p class="note"><span id="h-capn">0</span> frames in <code>datasets/real</code> &mdash; label them and fine-tune on real footage (see docs).</p>
+        <label for="h-rpath">Replay a folder of images or a video</label>
+        <input id="h-rpath" type="text" placeholder="C:\path\to\clip.mp4">
+        <div class="row" style="margin-top:8px"><button class="btn small" id="h-rplay">Replay</button><button class="btn small" id="h-rstop">Stop</button></div>
+        <p class="note" id="h-rstate"></p>
+      </div>
+      <div class="card">
+        <h3>Firmware &amp; wiring</h3>
+        <div class="row tight">
+          <button class="btn small fw" data-t="esp32_rover">Check rover</button>
+          <button class="btn small fw" data-t="esp32_rover_serial">Check USB rover</button>
+          <button class="btn small fw" data-t="esp32cam_stream">Check camera</button>
+          <button class="btn small fw" data-t="arduino_sensor_hub">Check Arduino</button>
+        </div>
+        <pre class="code" id="h-fwout" hidden></pre>
+        <div id="h-wiring"></div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+<script src="/static/app.js"></script>
+<script src="/lab-static/vendor/three.min.js"></script>
+<script src="/lab-static/env.js"></script>
+<script src="/lab-static/models/kit.js"></script>
+<script src="/lab-static/models/boat.js"></script>
+<script src="/lab-static/models/rover.js"></script>
+<script src="/lab-static/models/drone.js"></script>
+<script src="/lab-static/models/props.js"></script>
+<script src="/lab-static/viewer3d.js"></script>
+<script src="/lab-static/lab.js"></script>
+<script src="/lab-static/builder.js"></script>
+<script src="/lab-static/train.js"></script>
+<script src="/lab-static/goal.js"></script>
+</body>
+</html>
