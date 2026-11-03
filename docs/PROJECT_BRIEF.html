@@ -1,0 +1,695 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sewerbot + simlab: describe a job, get a machine, stress-test it, build it</title><style>
+:root{--ink:#1b2430;--muted:#5b6778;--line:#d9dfe8;--accent:#1f5fbf;--bg:#fff;--code:#f2f5f9}
+@media (prefers-color-scheme:dark){:root{--ink:#e4e9f1;--muted:#97a3b6;--line:#2c3646;--accent:#6aa6ff;--bg:#12161d;--code:#1b222d}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:960px;margin:0 auto;padding:28px 18px 80px}
+h1{font-size:30px;line-height:1.25;margin:.2em 0 .4em}h2{font-size:23px;margin:2.1em 0 .5em;padding-top:.6em;border-top:2px solid var(--line)}
+h3{font-size:18px;margin:1.6em 0 .4em;color:var(--accent)}p,li{max-width:78ch}a{color:var(--accent)}
+table{border-collapse:collapse;width:100%;margin:1em 0;font-size:14.5px;display:block;overflow-x:auto}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}th{background:var(--code)}
+code{background:var(--code);padding:1px 5px;border-radius:4px;font-size:.92em}
+pre{background:var(--code);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto;font-size:12.5px;line-height:1.35}pre code{background:none;padding:0}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}blockquote{margin:1em 0;padding:.4em 1em;border-left:4px solid var(--accent);background:var(--code)}
+.toc{background:var(--code);border:1px solid var(--line);border-radius:10px;padding:10px 18px;margin:1.4em 0}.toc ul{padding-left:1.1em;margin:.2em 0}.toc>ul{padding-left:0;list-style:none}
+.toc a{text-decoration:none}.printnote{color:var(--muted);font-size:13px}
+@media print{body{font-size:11.5pt}main{max-width:none;padding:0}h2{break-after:avoid}table,pre,blockquote{break-inside:avoid}.printnote{display:none}.toc{break-after:page}}
+</style></head><body><main>
+<p class="printnote">To send as a PDF: open this file in a browser and choose Print, then Save as PDF.</p>
+<h1 id="sewerbot-simlab-describe-a-job-get-a-machine-stress-test-it-build-it">Sewerbot + simlab: describe a job, get a machine, stress-test it, build it</h1>
+<p><strong>A project brief for the judges.</strong> Author / team: ______________________   Date: ______________</p>
+<hr />
+<h2 id="contents" style="border:0;padding:0;margin-top:1em">Contents</h2><div class="toc"><div class="toc">
+<ul>
+<li><a href="#0-the-project-at-a-glance">0. The project at a glance</a></li>
+<li><a href="#1-the-problem-and-the-idea">1. The problem and the idea</a><ul>
+<li><a href="#11-why-this-is-hard">1.1 Why this is hard</a></li>
+<li><a href="#12-the-idea">1.2 The idea</a></li>
+<li><a href="#13-who-it-is-for">1.3 Who it is for</a></li>
+</ul>
+</li>
+<li><a href="#2-what-the-user-actually-does-a-walkthrough">2. What the user actually does (a walkthrough)</a></li>
+<li><a href="#3-system-overview">3. System overview</a></li>
+<li><a href="#4-every-component-and-why-it-exists">4. Every component, and why it exists</a><ul>
+<li><a href="#41-machines-as-data-the-vehiclespec">4.1 Machines as data (the VehicleSpec)</a></li>
+<li><a href="#42-simulation-backends">4.2 Simulation backends</a></li>
+<li><a href="#43-tasks-and-classical-controllers">4.3 Tasks and classical controllers</a></li>
+<li><a href="#44-learning">4.4 Learning</a></li>
+<li><a href="#45-the-original-sewerbot-sewer-inspection-end-to-end">4.5 The original Sewerbot: sewer inspection end to end</a></li>
+<li><a href="#46-the-builder-from-real-parts-to-a-predicted-machine">4.6 The Builder: from real parts to a predicted machine</a></li>
+<li><a href="#47-the-sewer-pipe-environment-in-mujoco">4.7 The sewer pipe environment in MuJoCo</a></li>
+<li><a href="#48-the-goal-layer-from-a-sentence-to-a-checked-machine">4.8 The Goal layer: from a sentence to a checked machine</a></li>
+<li><a href="#49-stress-testing-where-does-it-start-to-fail">4.9 Stress testing: where does it start to fail?</a></li>
+<li><a href="#410-real-hardware-the-esp32-rover">4.10 Real hardware: the ESP32 rover</a></li>
+<li><a href="#411-the-dashboard">4.11 The dashboard</a></li>
+<li><a href="#412-what-the-machines-look-like-and-why-it-is-not-just-decoration">4.12 What the machines look like (and why it is not just decoration)</a></li>
+</ul>
+</li>
+<li><a href="#5-technology-choices-and-why">5. Technology choices and why</a></li>
+<li><a href="#6-one-example-end-to-end">6. One example, end to end</a></li>
+<li><a href="#7-measured-results">7. Measured results</a><ul>
+<li><a href="#71-camera-detector-and-sewer-missions-original-sewerbot">7.1 Camera detector and sewer missions (original Sewerbot)</a></li>
+<li><a href="#72-the-simulator-itself">7.2 The simulator itself</a></li>
+<li><a href="#73-learning-honest">7.3 Learning (honest)</a></li>
+<li><a href="#74-the-builder-against-published-data">7.4 The Builder against published data</a></li>
+<li><a href="#75-builder-designed-machines-in-the-simulator">7.5 Builder-designed machines in the simulator</a></li>
+<li><a href="#76-the-goal-layer-and-stress-tests">7.6 The Goal layer and stress tests</a></li>
+</ul>
+</li>
+<li><a href="#8-quality-testing-and-how-the-software-found-its-own-mistakes">8. Quality, testing and how the software found its own mistakes</a></li>
+<li><a href="#9-honest-limits-and-what-is-not-done">9. Honest limits and what is not done</a></li>
+<li><a href="#10-safety-ethics-and-licensing">10. Safety, ethics and licensing</a></li>
+<li><a href="#11-how-to-run-it-and-a-five-minute-demo">11. How to run it and a five-minute demo</a></li>
+<li><a href="#12-repository-map">12. Repository map</a></li>
+<li><a href="#13-glossary">13. Glossary</a></li>
+<li><a href="#14-where-it-goes-next">14. Where it goes next</a></li>
+</ul>
+</div>
+</div>
+<h2 id="0-the-project-at-a-glance">0. The project at a glance</h2>
+<p><strong>In one sentence.</strong> A simulation and design platform where a person describes a job in their own words ("find cracks in a sewer pipe", "a boat that reaches people trapped by a flood, even in strong wind", "watch an area from the air"), an AI model thinks the job through (what can go wrong, what the machine needs, which real parts), and <strong>the simulator checks every claim the AI makes</strong>: the software shows the resulting machine doing the job in a realistic 3D simulator, tries to break it with storms, wind, mud and failures, tells the person exactly where it starts to fail and what it did <em>not</em> test, prints a build sheet, and, for one machine (an ESP32 sewer-inspection rover), drives the real hardware. Without an AI key everything still works offline from three ready-made jobs.</p>
+<p><strong>The problem it addresses.</strong> Building a robot today means knowing, in advance, which motors, battery, controller and sensors will work together, whether they will survive the real environment, and how to wire them safely. Beginners guess; experts spend weeks on spreadsheets and test runs; mistakes cost money, break parts, and sometimes start fires. Training or testing the robot's software is a separate, equally hard problem.</p>
+<p><strong>What we built, in five layers.</strong></p>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>What it does</th>
+<th>Where it lives</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1. A simulator for any machine</strong></td>
+<td>Wheeled rovers, tracked crawlers, multi-rotor drones, boats (and any robot file you import) as <em>data</em>, simulated in MuJoCo; the original sewer world in Webots. The 3D view shows detailed models (a rescue boat with propeller and rudder, a rover with wheels and headlamp, a drone with spinning rotors), sky, sun and shadows, and <strong>animated water whose waves are the same waves the physics uses</strong></td>
+<td><code>simlab/</code>, <code>simlab/dashboard/static/</code></td>
+</tr>
+<tr>
+<td><strong>2. A Builder</strong></td>
+<td>Turns a list of real parts (57 sourced parts, 16 kinds) into predicted speed, thrust, runtime, weight; finds errors; suggests fixes that it verifies; shows the machine see-through with the chosen parts inside</td>
+<td><code>simlab/parts/</code></td>
+</tr>
+<tr>
+<td><strong>3. A Goal tab</strong></td>
+<td>Free-text job → <strong>AI planner (a free OpenRouter model) that decides, with the simulator checking it</strong> → machine → watch it → stress test → build sheet. Offline fallback: three ready-made jobs</td>
+<td><code>simlab/llm/</code>, <code>simlab/goals/</code>, <code>simlab/hazards/</code></td>
+</tr>
+<tr>
+<td><strong>4. Learning</strong></td>
+<td>Reinforcement learning for control policies, and a camera detector trained on the simulator's perfect labels</td>
+<td><code>simlab/train/</code>, <code>simlab/perception/</code></td>
+</tr>
+<tr>
+<td><strong>5. Real hardware</strong></td>
+<td>An ESP32 rover and ESP32-CAM driven from the same dashboard over USB or Wi-Fi, with safety interlocks</td>
+<td><code>sewerbot/hardware/</code>, <code>firmware/</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Headline numbers (all measured; simulator unless stated).</strong>
+- A camera detector (RF-DETR Nano) trained purely on auto-labelled simulator images: <strong>91.6 % / 84.5 %</strong> precision/recall on cracks and <strong>92.8 % / 85.8 %</strong> on leaks, 28 ms per frame. A whole 5-stop inspection mission found <strong>16 of 16</strong> planted defects.
+- The Builder's physics matches published data (Pololu motor datasheets, a published drone thrust table): errors between <strong>0.2 % and 13 %</strong> on the points checked.
+- The Builder-designed machines then fly or float in the simulator: a 5-inch quad holds position 10/10; a hexacopter flies a waypoint course 10/10; a boat's simulated top speed is 6.16 m/s against 5.91 estimated.
+- A stress test of the pipe rover takes <strong>16 seconds</strong>; of the boat, about <strong>2.5 minutes</strong> (23 conditions × 4 runs); the larger four-hazard plan an AI wrote for a flood-rescue boat (25 conditions) took about 9 minutes.
+- Run live against a 550-billion-parameter free model (section 7.6): a flood-rescue boat plan, an underwater-cave job <strong>correctly refused as unsupported</strong>, and a farm-field rover whose design the Builder caught with a real wiring mistake the AI had missed.
+- <strong>479 automated tests</strong> pass; about <strong>16,200 lines of Python</strong> in the application, <strong>5,400 in the tests</strong>, and <strong>2,700 lines of browser code</strong>.</p>
+<p><strong>What is honestly <em>not</em> shown.</strong> Nothing has been proven on real pipes, real water or a real drone. The real rover's motors are being repaired, so the hardware link was tested against a software emulator of the firmware. The simulator's cracks are procedural textures, not real concrete. Every report the software writes says this itself. Section 9 lists the limits in full.</p>
+<hr />
+<h2 id="1-the-problem-and-the-idea">1. The problem and the idea</h2>
+<h3 id="11-why-this-is-hard">1.1 Why this is hard</h3>
+<ol>
+<li><strong>Parts must fit each other.</strong> A motor rated for 6 V on a 12 V battery burns out; a controller that browns out when the motors start resets the robot; a 5 V sensor output into a 3.3 V pin can destroy the controller. These are <em>system</em> problems that no single datasheet reveals.</li>
+<li><strong>Datasheets are optimistic.</strong> Real motors are slower and weaker than the sheet, batteries sag under load, gearboxes lose torque.</li>
+<li><strong>The environment is the real test.</strong> A rover that works on a desk may stall in sludge; a boat that is fine on a calm lake may be blown away by wind; a drone that hovers may flip when one motor fails. Engineers call this <em>robustness</em>, and it is usually tested late, on the real machine, at real cost.</li>
+<li><strong>Testing all possible scenarios is impossible</strong>, so the honest answer is not "it is safe" but "it handles <em>these</em> conditions up to <em>this</em> level, and these others were not tested".</li>
+<li><strong>Software and hardware are developed separately</strong>, so control code is often first run on the real machine.</li>
+</ol>
+<h3 id="12-the-idea">1.2 The idea</h3>
+<p>Put the <em>whole chain</em> in one tool, in the order a person thinks about it:</p>
+<blockquote>
+<p><strong>job → machine → proof it can do the job → where it breaks → how to build it → run it for real</strong></p>
+</blockquote>
+<p>and make every step <em>checked</em>, <em>explained in plain words</em>, and <em>honest about its limits</em>.</p>
+<h3 id="13-who-it-is-for">1.3 Who it is for</h3>
+<ul>
+<li>A <strong>vendor or student</strong> with a goal but no robotics background ("I need something that inspects pipes").</li>
+<li>A <strong>maker</strong> who already owns parts and wants to know if they will work together, and what to add.</li>
+<li>A <strong>robotics learner</strong> who wants a safe place to try machines, train control policies and camera detectors without risking hardware.</li>
+<li>A <strong>team</strong> that needs a first, checked draft of a design and a list of what to test next.</li>
+</ul>
+<hr />
+<h2 id="2-what-the-user-actually-does-a-walkthrough">2. What the user actually does (a walkthrough)</h2>
+<p>Open the dashboard (<code>startup.bat</code>). It has six tabs: <strong>Goal · Lab · Builder · Train · Sewer (Webots) · Hardware</strong>. A first-time user only needs the first.</p>
+<ol>
+<li><strong>Goal tab: "Describe the job".</strong> The user types, in their own words, <em>a boat that goes out to people trapped by a flood, even in strong wind and rough water</em>, and presses <strong>Plan it with AI</strong>. A live panel shows what the model is doing ("Thinking through what can go wrong", "Choosing parts") and has a Stop button. A free model is slow, so this takes one to three minutes. If the job is something no machine here can do (<em>map an underwater cave</em>), the answer is "not something this simulator can do", with the reason, and <strong>no machine is invented</strong>. Without an AI key, or when the free quota is spent, the user opens <strong>Ready-made jobs</strong> (<em>Inspect pipes</em>, <em>Rescue on the water</em>, <em>Watch from the air</em>), which work offline.</li>
+<li><strong>Only the questions that matter.</strong> The AI asks up to three (<em>how far out? how much must it carry? night operation?</em>), each with the reason it matters and the limits the simulator supports; the user can tick <strong>"My ESP32 rover kit"</strong> so that parts they already own are preferred. The ready-made jobs ask three fixed questions instead.</li>
+<li><strong>"What the AI understood" and "What could go wrong".</strong> The page shows the AI's reading of the job, its assumptions, and every situation it thought of (strong wind, current, floating debris, a failed thruster...), each marked <strong>✓ can be simulated</strong> (it will be stress-tested) or <strong>✗ not testable here</strong> (it will be listed as <em>not tested</em>). A line lists what the checker <strong>corrected or dropped</strong> from the AI's answer.</li>
+<li><strong>"Your machine."</strong> The software checks the AI's designs, then searches the parts library for a verified alternative, checks every candidate, and shows the best design with a <strong>traffic light</strong> (green: looks right; amber: watch these; red: not there yet), three headline numbers (speed, time it can run, weight), a list of what it meets ("fits 30 cm pipes ✓", "goes 5 m and back on one battery ✓"), and the parts split into <strong>you have</strong> and <strong>to buy</strong>. If nothing in the library can do the job, it <em>says so</em> and shows the closest design with what it misses.</li>
+<li><strong>"Watch it work."</strong> One click opens the 3D simulator with the machine doing the job (the rover driving through a textured concrete pipe with its camera view; the boat steering to a swimmer through animated waves). For an AI plan, <strong>"Watch in the worst conditions"</strong> applies the waves, wind, current or grip the job asked for.</li>
+<li><strong>"How tough is it?"</strong> A stress test pushes the machine through the hazards the plan chose, getting worse step by step, and reports where it starts to fail (section 4.9).</li>
+<li><strong>"Build sheet."</strong> A printable page: the parts to buy with where every number came from and how sure we are; a wiring table; numbered assembly steps; safety rules.</li>
+<li><strong>"Use on my real rover."</strong> Copies the machine's size and camera mount to the Hardware tab, where the user connects the real rover and drives it with a safety checklist.</li>
+<li><strong>"Advanced: open in the Builder."</strong> For people who want to change any part by hand.</li>
+</ol>
+<p>The same flow works for boats (a boat that goes to a person in the water), drones (an observation drone) and rovers. The simulator can only test ground rovers, drones and boats, and only the hazards in its menu (section 4.8).</p>
+<hr />
+<h2 id="3-system-overview">3. System overview</h2>
+<pre><code>                         ┌─────────────────────────── Dashboard (browser) ───────────────────────────┐
+                         │  Goal · Lab · Builder · Train · Sewer (Webots) · Hardware                 │
+                         └──────────────▲────────────────────────────────────────────▲───────────────┘
+                                        │ HTTP / WebSocket (FastAPI)                 │
+        ┌───────────────────────────────┴───────────────┐        ┌──────────────────┴───────────────────┐
+        │  GOAL layer  (simlab/goals, simlab/hazards)   │        │  HARDWARE layer (sewerbot/hardware)   │
+        │  AI planner → checker → designer → verdict    │        │  USB-serial rover · Wi-Fi rover       │
+        │  stress-test engine → report · build sheet    │        │  ESP32-CAM stream · safety interlocks │
+        └───────────────────────▲───────────────────────┘        └──────────────────▲───────────────────┘
+                                │ build (parts)                                      │ same commands
+        ┌───────────────────────┴───────────────────────┐                            │
+        │  BUILDER  (simlab/parts)                       │                            │
+        │  57 parts · physics derivation · rules ·       │                            │
+        │  recommender · calibration · 3D preview        │                            │
+        └───────────────────────▲───────────────────────┘                            │
+                                │ VehicleSpec (a machine as data)                    │
+        ┌───────────────────────┴────────────────────────────────────────────────────┴──────┐
+        │  SIMLAB core: VehicleSpec · tasks · policies · backends (MuJoCo, Webots) · RL · detector │
+        └───────────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<p><strong>The key design decision</strong> is the <em>seam</em> in the middle: a machine is described by a <code>VehicleSpec</code> (a small YAML file of physical numbers: mass, wheel radius, maximum speed, thrust, sensors...). Everything above the seam (Builder, Goal) <em>produces</em> specs; everything below it (simulation, training, the dashboard's Lab) <em>consumes</em> them. That is why a machine designed from parts runs in every existing task and trainer with no extra work, and why new kinds of machine can be added without touching the rest.</p>
+<hr />
+<h2 id="4-every-component-and-why-it-exists">4. Every component, and why it exists</h2>
+<p>For each part: <strong>What</strong> it is · <strong>Why</strong> it is there · <strong>How</strong> it works · <strong>Result / limits</strong>.</p>
+<h3 id="41-machines-as-data-the-vehiclespec">4.1 Machines as data (the <code>VehicleSpec</code>)</h3>
+<ul>
+<li><strong>What.</strong> A YAML description of a machine: its kind, body (mass, size), parameters, sensors, limits. Example kinds: <code>ground_wheeled</code> (2WD, 4WD, 6WD, tracked), <code>multirotor</code> (quad, hex, octo), <code>custom</code> (any MuJoCo or URDF robot file), and <code>boat</code> (added as a plug-in).</li>
+<li><strong>Why.</strong> If machines are data, a new robot is a file, not new code, and the same task, controller and training code runs on all of them. It also lets a <em>form</em> be generated from the schema, so every parameter is validated with a clear reason when wrong (a drone that cannot hover, a boat that would sink, wheels taller than the body).</li>
+<li><strong>How.</strong> Each kind registers a <em>parameter schema</em>, <em>command spaces</em> (how it is steered: for example <code>unicycle</code> = forward speed + turn rate; <code>velocity</code>/<code>position</code>/<code>motors</code> for drones; <code>helm</code> = throttle + rudder for boats), checks, and <em>derived facts</em> (thrust-to-weight, draft, top speed). Presets: <code>micro_2wd</code>, <code>mid_4wd</code>, <code>large_6wd</code>, <code>tracked_crawler</code>, <code>quad_micro</code>, <code>quad_250</code>, <code>hex_450</code>, <code>boat_small</code>, <code>boat_workboat</code>.</li>
+<li><strong>Plug-ins.</strong> A new kind of machine is one Python module that registers its kind and its physics. The boat is exactly this (about 190 lines) and serves as the worked example.</li>
+<li><strong>Import.</strong> Any MJCF/URDF robot can be imported; its actuators become raw command channels.</li>
+</ul>
+<h3 id="42-simulation-backends">4.2 Simulation backends</h3>
+<ul>
+<li><strong>MuJoCo (fast, headless, trainable).</strong> The default engine. It runs on a CPU, is deterministic (same seed, same result), and can run many copies in parallel, which is what reinforcement learning needs. About 5,400 rover steps per second per core, 2,400 for a drone, 1,800 for a boat.</li>
+<li><em>Ground vehicles</em> use a <strong>planar model</strong>: the body slides in x, y and yaw with acceleration limits, tyre-grip limits, and a measured yaw loss for skid-steering. Wheels are visual only. <em>Why:</em> it reproduces navigation-level behaviour at any size and speed and is fast; wheel-level contact physics is left to Webots.</li>
+<li><em>Multirotors</em> are rigid bodies with per-rotor thrust (a motor lag), drag toward the wind, a battery model, and a flight controller ("autopilot") that turns commands into rotor thrusts.</li>
+<li><em>Boats</em> use buoyancy sampled over the hull bottom, quadratic water drag, a thruster with lag, and a rudder.</li>
+<li><strong>Webots (visual, wheel-level physics).</strong> The original sewer world, with textured pipes, chambers and procedurally generated crack and leak patches. One simulation at a time and slow to start, so not used for training; it is used for the realistic sewer missions and as the cross-check for the MuJoCo pipe environment.</li>
+<li><strong>A backend contract</strong> (<code>Backend</code>) hides which engine is in use, so tasks, policies and the dashboard do not care.</li>
+</ul>
+<h3 id="43-tasks-and-classical-controllers">4.3 Tasks and classical controllers</h3>
+<ul>
+<li><strong>What.</strong> A <em>task</em> defines a world, a goal, what the controller sees, and how success is scored. Built in: <code>goto</code> (reach a goal among obstacles), <code>waypoints</code>, <code>hover_hold</code>, <code>takeoff_waypoints</code>, <code>land</code>, <code>search</code> (find labelled targets among look-alikes), <code>sandbox</code>, <code>sewer_drive</code>, <code>pipe_inspect</code> (the sewer in MuJoCo), <code>water_rescue</code> (reach a person in the water).</li>
+<li><strong>Why.</strong> Separating <em>what to do</em> from <em>what does it</em> lets any machine be tried on any suitable task, and gives training a clear reward.</li>
+<li><strong>Baselines.</strong> Every task has a <em>classical controller</em> (hand-written). <strong>Why this matters:</strong> it is the yardstick. A learned policy is only worth reporting if it beats the classical one. The measured result (section 7) is honest: it did not.</li>
+</ul>
+<h3 id="44-learning">4.4 Learning</h3>
+<ul>
+<li><strong>Reinforcement learning (Train tab).</strong> Stable-Baselines3 (PPO or SAC) with 1–16 parallel simulators, an optional easy-to-hard curriculum, live learning curves, and a final comparison with the classical controller on identical unseen scenarios (with 95 % confidence intervals). <em>Why:</em> to let someone train a control policy for their own machine and see, truthfully, whether it is better than the simple one.</li>
+<li><strong>Camera detector (Train tab and <code>tools/</code>).</strong> The simulator renders a second, <em>segmentation</em> image where every object has a unique colour, so bounding boxes are <strong>pixel-exact and occlusion-aware at zero labelling cost</strong>. A pipeline captures views, trains an <strong>RF-DETR Nano</strong> detector (Apache-2.0 licence, chosen to avoid licence traps), and evaluates it. <em>Why:</em> labelled data is the expensive part of computer vision; here the simulator labels itself.</li>
+<li><strong>Hard negatives.</strong> The images deliberately include things that must <em>not</em> be flagged (pipe-joint rings, brick chambers, silt, goal posts), which is what makes the detector usable.</li>
+</ul>
+<h3 id="45-the-original-sewerbot-sewer-inspection-end-to-end">4.5 The original Sewerbot: sewer inspection end to end</h3>
+<p>This is the first project the platform grew from.</p>
+<ul>
+<li><strong>Sewer maps (YAML).</strong> Pipes (round, oval, box), chambers, branches, goal posts and planted or random cracks and leaks. Four maps: <code>short_pipe</code>, <code>straight_t</code>, <code>star_five_goals</code>, <code>large_loop</code>.</li>
+<li><strong>World generator</strong> (<code>tools/gen_world.py</code>). Turns a map and a rover profile into a Webots world with procedural wall textures and baked defect patches. <strong>Collision uses simple boxes</strong> (one thin box per wall segment) because Webots' physics was unstable on concave meshes; meshes are used only for appearance.</li>
+<li><strong>Rover profiles</strong> (<code>micro_2wd</code>, <code>mid_4wd</code>, <code>tracked_crawler</code>, <code>large_6wd</code>): size, drive, speed, camera height/tilt/field of view. Skid-steer rovers turn less than the ideal maths says, so each preset stores a <strong>measured yaw gain</strong> (0.87 for 2WD, 0.67 for 4WD and tracked, 0.66 for 6WD).</li>
+<li><strong>Detectors.</strong> RF-DETR (learned) and a training-free OpenCV fallback ("classical"). The fallback is kept deliberately <em>as a baseline</em>: on the same frames it scored only 1–3 % precision, which shows what the learned detector buys.</li>
+<li><strong>Defect tracker.</strong> A crack seen in dozens of frames must become <em>one</em> defect on the map. The tracker projects each detection onto the pipe wall, merges duplicates, requires several sightings, and ignores low-confidence boxes. Tightening it cut false alarms from 21 to 6 at the slowest speed.</li>
+<li><strong>Mission and report.</strong> The rover drives a route (manual, go to a goal, or inspect everything), the tracker builds a defect map, and a self-contained HTML/JSON report is written (map, defects with snapshots, and a score against the planted ground truth).</li>
+<li><strong>Camera realism.</strong> Real cameras auto-expose and a rover's lamp lights only part of the pipe, so the simulator emulates <strong>auto-exposure</strong> and tilts the camera <em>up</em> about 10° (a level camera on a 7.5 cm rover sees mostly floor). Without this, labelled defects are invisible and the detector learns noise.</li>
+</ul>
+<h3 id="46-the-builder-from-real-parts-to-a-predicted-machine">4.6 The Builder: from real parts to a predicted machine</h3>
+<p><strong>Why it exists.</strong> A user has an ESP32, a motor driver, motors, wheels and a battery; they need to know what that machine can do and whether it will work. Nothing connects the parts on the bench to the numbers a simulator needs.</p>
+<ul>
+<li><strong>Parts library</strong> (<code>simlab/parts/library/&lt;kind&gt;/*.yaml</code>): <strong>57 parts in 16 kinds</strong>: DC motors, wheels/tracks, motor drivers, batteries, voltage regulators, controller boards, cameras, range sensors, IMU, GPS, lamps, drone frames, motor+propeller sets, ESCs, boat hulls, boat thrusters.</li>
+<li>Every part carries a <strong><code>source</code></strong> (where the numbers came from: a datasheet link, a test report, or "generic") and a <strong><code>confidence</code></strong> (<code>datasheet</code>, <code>typical</code>, <code>assumed</code>, <code>measured</code>) shown as a badge. <em>Why:</em> hobby parts are often mis-specified; the user must be able to see which numbers to distrust.</li>
+<li>Users can <strong>add their own parts</strong>. The form is generated from the same schema the server checks, and a unit mistake is refused with a reason (a motor whose numbers imply more than 90 % efficiency is almost always torque typed in the wrong unit).</li>
+<li><strong>Physics derivation</strong> (closed-form, no hidden tuning knobs):</li>
+<li><em>Ground:</em> a brushed DC motor has a straight torque-speed line fixed by four datasheet numbers (rated voltage, no-load speed, stall torque, stall current). Fed from a battery that sags and through a driver that loses some voltage, the maths gives top speed (against rolling resistance and drag), acceleration, climbing slope, turn rate, stall current and runtime. Assumptions are listed on screen: a 0.85 torque derate, 80 % usable battery capacity, 10 % extra mass for wiring.</li>
+<li><em>Air:</em> thrust and current scale with battery voltage squared from a published thrust-test point; hover current follows a curve fitted to measured data; the autopilot's limits (tilt, climb rate) come from rules of thumb and are conservative.</li>
+<li><em>Water:</em> draft, freeboard and top speed from the boat plug-in's own model.</li>
+<li><strong>Rules and findings.</strong> Every problem is a <em>finding</em> with a severity (error blocks saving, warn, info), a plain explanation and often a fix. Examples: the <strong>documented ESP32 brown-out on 4×AA NiMH without a boost converter</strong>; a battery above the motor's or driver's rating; a stalled motor tripping the driver; a 5 V sensor into a 3.3 V pin; not enough controller pins; a drone with thrust-to-weight below 1.3 ("it will not fly"); a boat that sinks.</li>
+<li><strong>Verified suggestions.</strong> For a finding with a fix ("add a boost converter"), each candidate part from the library is <em>applied to a copy of the build and the whole build re-checked</em>; a part is offered only if it removes the problem without creating a new error. Parts the user owns come first. <em>Why:</em> a suggestion that breaks something else is worse than none.</li>
+<li><strong>Task fit.</strong> A task states what it needs (a camera, a lamp in a dark pipe, that the machine fits the pipes, enough runtime); the Builder checks the build against it.</li>
+<li><strong>Calibration.</strong> The user enters what they can measure with a ruler, a stopwatch and a kitchen scale (mass, distance in 3 s, spin angle, time to 90 % speed, runtime); the model is scaled to match, and a table shows predicted versus measured. <em>Why:</em> it is the only honest way to tie an estimate to a real machine.</li>
+<li><strong>3D preview.</strong> The assembled machine is drawn with its parts inside a see-through body, and each sensor's field of view as a cone.</li>
+</ul>
+<h3 id="47-the-sewer-pipe-environment-in-mujoco">4.7 The sewer pipe environment in MuJoCo</h3>
+<ul>
+<li><strong>Why.</strong> Webots is realistic but slow and cannot run in parallel, so training and quick tests could not use the pipes. This environment brings the sewer into the fast engine.</li>
+<li><strong>How.</strong> The same sewer maps are turned into textured meshes, collision boxes <strong>identical to Webots' (a test compares them)</strong>, labelled defect patches (so segmentation labels work), the rover's own <strong>lamp as the only light</strong>, and the same camera auto-exposure. A technical detail worth knowing: MuJoCo lights each vertex, so a big wall shows black unless it is subdivided into cells under 0.45 m; the first attempt produced 102,000 slivered triangles, the grid approach about 10,000.</li>
+<li><strong>Result.</strong> About 1,790 policy steps/s without a camera and 22 with a 640×480 frame every step; an inspect-everything mission scores like the Webots one.</li>
+</ul>
+<h3 id="48-the-goal-layer-from-a-sentence-to-a-checked-machine">4.8 The Goal layer: from a sentence to a checked machine</h3>
+<ul>
+<li><strong>The AI planner</strong> (<code>simlab/llm/</code>). The person's sentence goes to a language model (OpenRouter's free tier; the default is NVIDIA Nemotron 3 Ultra, 550 billion parameters) with a prompt <strong>built from the live parts library, hazard menu and task presets</strong>, so the model can never be told about a part or hazard that does not exist. It returns one JSON plan: what the job is and which machine type fits (or "unsupported"), the job's numbers, at most three questions, 4 to 8 scenarios it thought of, extra requirements, which test scene and which hazards to sweep, and one or two complete designs. <em>Why a model at all:</em> three fixed jobs and keyword matching could not understand "people trapped by a flood"; a model can read any job and brainstorm what can go wrong.</li>
+<li><strong>The principle: the AI proposes, the simulator checks</strong> (<code>schema.py</code>, <code>metrics.py</code>, <code>design.py</code>, <code>synth.py</code>). The model's answer is <em>data, never instructions</em>, and is checked before anything happens:</li>
+<li><strong>Closed menu.</strong> Parts, hazards, faults, task presets and job numbers come from a menu built from the code. Anything the model invents is dropped and listed ("dropped requirement ...: not something the Builder reports").</li>
+<li><strong>Clamped to physics.</strong> Every number is held to the range the simulator supports (a model asked for 100 to 150 kg of payload where the boat model carries 20: it was clamped and the page said so). Even the <em>default</em> of a question is clamped, and the limit is shown beside the box.</li>
+<li><strong>Measured, not believed.</strong> A requirement such as "freeboard of at least 25 cm" is computed by the Builder's evaluator; a design the AI claims is fine but whose battery or wiring is wrong is flagged by the same electrical checks as any hand-made design. The live run in section 7.6 shows this catching a 5 V sensor wired to a 3.3 V pin that the model missed.</li>
+<li><strong>A scenario the simulator cannot model is never passed.</strong> The AI gives each scenario a hazard id or <code>null</code>; <code>null</code> ones are shown as "not testable here" and end up in the report's <em>not tested</em> list.</li>
+<li><strong>Untrusted input.</strong> The job text cannot widen what the model may choose: an instruction hidden in the sentence changes nothing, because the model's output goes through the same validation.</li>
+<li><strong>At most three requests per plan</strong> (one to plan, one repair if the answer was unreadable or cut off, one revision when the checker finds problems), because the free tier allows about 50 requests a day. When the AI fails or no key is set, the <strong>offline planner</strong> (below) runs and the page says so.</li>
+<li><strong>The key stays on the machine.</strong> It is stored in a git-ignored file or read from <code>OPENROUTER_API_KEY</code>, never sent to the browser, never written to a log or an error message.</li>
+<li><strong>Goal catalogue and offline planner</strong> (<code>simlab/goals/catalogue/*.yaml</code>): <em>Inspect pipes</em>, <em>Rescue on the water</em>, <em>Watch from the air</em> (observation only). Each has keywords, up to three plain questions whose answers are numbers, and the task to test on. Matching is deterministic keyword scoring that works with no internet; no match → ask, never guess. This is the fallback, and the path used when no AI key is set.</li>
+<li><strong>Designer</strong> (<code>design.py</code>). The AI's own designs are checked first; then a <em>staged search</em> over the verified library finds alternatives. Every candidate (about 210 for the rover, 288 for the drone, 12 for the boat, 2–4 seconds) must (1) be a valid build per the Builder's checks and (2) meet the goal's requirements, which the answers (or the AI's job numbers) turn into numbers:</li>
+<li><em>Pipes:</em> fits the pipe width; drives the distance and back with a 1.5× margin; enough pulling power for wet pipes.</li>
+<li><em>Water:</em> stays out the time; round trip within 80 % of the runtime; freeboard (hull above the water) at least 0.7× the wave height; thruster at least 1.3× the wind's push on the hull; a second thruster for rough water (the rescue-boat rules ask for two independent propulsion systems offshore).</li>
+<li><em>Air:</em> flight time 1.2× the request; thrust-to-weight enough to lean into the wind.
+  It prefers parts the user owns, then fewest warnings, then lowest weight, and offers extra designs only when they are clearly different (15 % longer time out or 15 % lighter). Finalists are re-checked against the goal's own task. <strong>If nothing qualifies it says so and shows the closest design and what it misses.</strong></li>
+<li><strong>Plain-language verdict.</strong> Findings already carry plain titles, so the screen shows "A stalled motor would overheat the driver" instead of a rule code, with a traffic light.</li>
+<li><strong>Build sheet</strong> (<code>assembly.py</code>). Parts list (quantity, have/buy, confidence, source), wiring, steps, safety rules, printable. <strong>Pin-level wiring and flashing steps exist only for the ESP32 + DRV8833 two-motor rover</strong>, because that is the one machine whose firmware and wiring were built and checked; the sheet for a drone or boat says to wire from the datasheets. <em>Why this restraint:</em> a wrong wire on a LiPo battery can start a fire, so the tool claims only what it has verified.</li>
+</ul>
+<h3 id="49-stress-testing-where-does-it-start-to-fail">4.9 Stress testing: where does it start to fail?</h3>
+<ul>
+<li><strong>Why.</strong> "Handles every scenario" is impossible to prove and dangerous to claim. What <em>can</em> be done honestly is to push the machine through conditions that get worse step by step and report <strong>the level at which it starts to fail</strong>, together with a list of what was not tested. This follows how safety engineers describe scenario-based testing (define the operating conditions, sweep them, report coverage and what is outside).</li>
+<li><strong>Hazard hooks.</strong> <code>Sim(vehicle, task, hazards={...})</code> applies fixed, repeatable conditions to each kind of machine:</li>
+<li><em>Rover:</em> grip, mud/debris (a share of the motors' pulling force, which cuts top speed by the same share: a linear motor curve), slow or lost commands, a dead drive motor, battery level.</li>
+<li><em>Boat:</em> waves (a few linear deep-water waves with a realistic spread, sampled over the hull), wind (quadratic drag on the part above water, which also heels the boat), current, thruster failure, a jammed rudder, battery; the boat reports roll, pitch and "deck awash" so capsizing and swamping are detected.</li>
+<li><em>Drone:</em> wind with gusts and quadratic drag on the airframe, rotor failure, weak motors, battery.</li>
+<li><strong>Same scenes at every level.</strong> The wave phases, wind and current directions come from the seed, not the severity, so the only thing that changes between levels is the hazard.</li>
+<li><strong>Catalogue</strong> (<code>simlab/hazards/catalogue/*.yaml</code>). Each hazard lists its levels, a plain explanation, a <strong>source</strong> for the range (for example the operating categories of rescue boats, published wind ratings of search-and-rescue drones, reports of what stops sewer robots), and a suggested fix.</li>
+<li><strong>Result.</strong> For each hazard: the last level that passed and the first that failed, compared with what the user asked ("you asked for 8 m/s wind: covered"). Faults (a thruster, rotor or motor failing) are single cases. A <strong>weakest point</strong> is named with a suggested fix. It runs in the background with a progress bar and a Stop button, and writes an HTML and JSON report.</li>
+<li><strong>What it never says.</strong> That the machine is safe. Every report ends with a <strong>"not tested"</strong> list (for example breaking waves and hull slamming, darkness and a fogged lens, a blocked pipe, GPS loss, a drifting person) and a statement that results come from a simple built-in controller in a simulator.</li>
+<li><strong>Why the stress test matters for the software too.</strong> It found three of our own mistakes (section 8).</li>
+</ul>
+<h3 id="410-real-hardware-the-esp32-rover">4.10 Real hardware: the ESP32 rover</h3>
+<ul>
+<li><strong>The machine.</strong> An ESP32 DevKit (brain), a DRV8833 motor driver on GPIO 26/27 (left) and 32/33 (right), two TT-class gear motors in a ZK-2WD chassis, 4×AA NiMH, and a <strong>separate ESP32-CAM</strong> board streaming video (GC2145 sensor, 96×96 pixels, about 9–11 frames per second). Planned sensors: an HC-SR04 ultrasonic sensor and an IR obstacle sensor.</li>
+<li><strong>Why two control paths exist.</strong> The original design (<code>firmware/esp32_rover</code>) is a Wi-Fi rover (UDP drive commands, a 0.3 s failsafe, a battery cut-off, a camera stream). The rover actually built uses a <strong>USB cable</strong> and its own simple firmware (<code>rover_wasd</code>: single keys <code>w a s d x e q</code>). The dashboard supports both.</li>
+<li><strong>The USB driver</strong> (<code>sewerbot/hardware/serial_rover.py</code>). Speaks the rover's key protocol, and adds safety the firmware cannot give alone:</li>
+<li>The first byte after boot is a <strong>stop</strong>; a <strong>heartbeat</strong> is sent every 0.2 s; a drive command <strong>lapses after 0.4 s</strong> unless renewed; stop is the first thing done when closing.</li>
+<li>Forward motion is <strong>refused</strong> when the distance sensor reports an obstacle under 15 cm, gives no valid reading, or has gone silent, or when the IR sensor sees something. (An unplugged sensor must never look like a clear path.) Spinning remains allowed so the rover can turn away.</li>
+<li>Opening a COM port resets the ESP32, so the driver waits 2.5 s; only one program can hold a port, so a busy port gives a message telling the user what to close.</li>
+<li><strong>The new firmware</strong> (<code>firmware/esp32_rover_serial</code>). The user's sketch plus: a telemetry line every 0.5 s, optional ultrasonic and IR sensors that stop forward motion on their own, and a <strong>watchdog that is always armed while the rover moves</strong> (the original only armed after the first heartbeat, so a serial monitor could leave it running). It <strong>compiles</strong> for the ESP32 DevKit (21 % of flash, with or without the sensors). <strong>It has not been flashed.</strong></li>
+<li><strong>The pre-drive checklist.</strong> Drive controls stay locked until four boxes are ticked (wheels off the ground or the area clear; battery at least 4.4 V; Stop tested; power switch within reach). The lock is enforced <strong>on the server</strong>, not only in the browser. <strong>Stop always works.</strong></li>
+<li><strong>The emulator.</strong> A software copy of the firmware (same keys, replies, watchdog and sensor behaviour) lets every part be tested and demonstrated without the rover. <em>Why:</em> hardware is slow, fragile and unavailable at 3 a.m.</li>
+<li><strong>Calibration on hardware.</strong> Drive for a fixed time, measure the distance and the turn, enter them; speed and turn rate are stored for the current speed level.</li>
+</ul>
+<h3 id="411-the-dashboard">4.11 The dashboard</h3>
+<p>A FastAPI server and a plain-JavaScript page (no build step), with three.js for the 3D view. <strong>Why plain JavaScript:</strong> nothing to install or compile, easy to read. All tab scripts share one global scope, so a test audits that no two files declare the same top-level name (this bug broke the Builder twice).</p>
+<table>
+<thead>
+<tr>
+<th>Tab</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Goal</strong></td>
+<td>The starting point: describe a job → AI plan (live progress, questions, what could go wrong) → checked machine → stress test → build sheet; AI settings box (key, model, how many free requests are left); ready-made jobs as the offline path</td>
+</tr>
+<tr>
+<td><strong>Lab</strong></td>
+<td>Pick any machine and task and watch it in 3D with its camera and telemetry; drive it by hand; a form to edit every parameter; <strong>Conditions</strong> sliders for waves, wind, current and grip</td>
+</tr>
+<tr>
+<td><strong>Builder</strong></td>
+<td>Assemble a machine from parts; predicted performance, findings, suggestions, calibration, a see-through 3D preview with the parts inside</td>
+</tr>
+<tr>
+<td><strong>Train</strong></td>
+<td>Reinforcement-learning and detector training runs, live curves, comparison with the classical controller</td>
+</tr>
+<tr>
+<td><strong>Sewer (Webots)</strong></td>
+<td>The original sewer inspection missions with the detector and a mission report</td>
+</tr>
+<tr>
+<td><strong>Hardware</strong></td>
+<td>Connect and drive the real rover and camera, checklist, calibration, save frames, replay video, check the firmware compiles</td>
+</tr>
+</tbody>
+</table>
+<h3 id="412-what-the-machines-look-like-and-why-it-is-not-just-decoration">4.12 What the machines look like (and why it is not just decoration)</h3>
+<p>The first version drew every machine as plain boxes on a flat plane ("two blocks running in the water"), which made results hard to believe and hard to read. The 3D view (<code>simlab/dashboard/static/</code>, three.js) now draws:</p>
+<ul>
+<li><strong>Models built from the machine's real dimensions</strong> (<code>models/boat.js</code>, <code>rover.js</code>, <code>drone.js</code>, <code>props.js</code>): a rescue boat (shaped orange hull, console, mast with light, lifebuoy, outboard with a spinning propeller and a rudder that turns), a rover (body shell, wheels or tracks that turn with the real wheel motion, camera on a stalk, headlamp), a quadcopter or hexacopter (frame, arms, motors, propellers that spin with thrust), a swimmer in a life jacket, floating debris. They are procedural (no downloaded art), so the project stays offline and licence-clean; they are <em>typical designs</em>, not CAD of a product.</li>
+<li><strong>A sky, sun and shadows, and animated water whose waves come from the same five-wave model the physics uses</strong> (<code>env.js</code>; the shader and <code>BoatPlant.surface</code> use the same heights, directions and clock). The boat visibly rides the wave the buoyancy calculation is using. In pipes the world is dark and lit by the vehicle's own lamp, on textured concrete and brick with solid crack and leak patches.</li>
+<li><strong>A see-through "ghost" in the Builder</strong>, with the battery, controller, motors or thrusters, sensors and each camera's field of view drawn inside the same model.</li>
+<li><strong>For the onboard camera</strong> (rendered by MuJoCo, separate from the browser view) open water has a textured, glinting sea under a pale sky. Other scenes are unchanged on purpose, so previously trained detectors see the same images. Fog was tried and rejected: it hid the person the boat is looking for.</li>
+<li><strong>Cost.</strong> The heaviest scene (boat in rough water) draws with 53 draw calls and about 36,000 triangles and keeps the display's full frame rate.</li>
+</ul>
+<hr />
+<h2 id="5-technology-choices-and-why">5. Technology choices and why</h2>
+<table>
+<thead>
+<tr>
+<th>Technology</th>
+<th>Used for</th>
+<th>Why this and not something else</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Python 3.11</strong></td>
+<td>Everything except firmware and browser code</td>
+<td>The robotics, ML and web ecosystems are here; one language across simulator, ML and server</td>
+</tr>
+<tr>
+<td><strong>MuJoCo 3.17</strong></td>
+<td>Fast physics</td>
+<td>Free, deterministic, very fast on CPU, parallelisable: the properties RL and sweeps need</td>
+</tr>
+<tr>
+<td><strong>Webots R2025a</strong></td>
+<td>Realistic sewer world</td>
+<td>Apache-2.0, strong wheel-level physics and rendering; kept for fidelity, not speed</td>
+</tr>
+<tr>
+<td><strong>Stable-Baselines3 (PPO, SAC)</strong></td>
+<td>RL</td>
+<td>Standard, well-tested implementations; honest comparison with baselines</td>
+</tr>
+<tr>
+<td><strong>RF-DETR Nano</strong></td>
+<td>Camera detector</td>
+<td>Apache-2.0 (no licence strings), accurate, 28 ms per frame; the AGPL YOLO family was deliberately <em>not</em> installed</td>
+</tr>
+<tr>
+<td><strong>OpenCV</strong></td>
+<td>Image handling, classical detector</td>
+<td>Standard; the training-free baseline</td>
+</tr>
+<tr>
+<td><strong>PyTorch (CUDA 12.8)</strong></td>
+<td>Detector training on an RTX 5050 8 GB laptop GPU</td>
+<td>The GPU class here needs CUDA ≥ 12.8; small model chosen for the 8 GB limit</td>
+</tr>
+<tr>
+<td><strong>FastAPI + WebSockets</strong></td>
+<td>Server</td>
+<td>Typed endpoints, live state streaming, tiny code</td>
+</tr>
+<tr>
+<td><strong>Plain JS + three.js</strong></td>
+<td>Browser UI and 3D</td>
+<td>No build tooling; the viewer draws any scene</td>
+</tr>
+<tr>
+<td><strong>OpenRouter (free models)</strong></td>
+<td>The AI planner</td>
+<td>One API to many models, a free tier, and the <strong>model can be swapped by typing a name</strong>; the project does not depend on one vendor. The default is NVIDIA Nemotron 3 Ultra (550 B). Optional: without a key the offline planner is used</td>
+</tr>
+<tr>
+<td><strong>YAML</strong></td>
+<td>Machines, parts, tasks, goals, hazards</td>
+<td>Human-readable and editable; the <em>data</em> is separated from the <em>code</em></td>
+</tr>
+<tr>
+<td><strong>ESP32 DevKit + ESP32-CAM + DRV8833</strong></td>
+<td>The real rover</td>
+<td>Cheap, available, Wi-Fi/USB, enough pins; a camera board cannot run a useful detector, so the laptop does the detection</td>
+</tr>
+<tr>
+<td><strong>Arduino-ESP32 core 3.x, arduino-cli</strong></td>
+<td>Firmware</td>
+<td>Compile checks can run from the dashboard</td>
+</tr>
+<tr>
+<td><strong>pyserial</strong></td>
+<td>USB link</td>
+<td>The standard way to talk to a COM port</td>
+</tr>
+<tr>
+<td><strong>pytest</strong></td>
+<td>479 tests</td>
+<td>Every safety rule and every claim in this brief is backed by a test or a measured run</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-one-example-end-to-end">6. One example, end to end</h2>
+<p><em>"Find cracks in a sewer pipe", 30 cm pipes, one street block, wet inside, using my rover kit.</em></p>
+<ol>
+<li>The matcher picks <em>Inspect pipes</em>; the answers become <code>pipe_d = 0.30</code>, <code>distance = 50 m</code>, <code>wet = 1</code>.</li>
+<li>The designer builds the rover's chassis to fit the pipe (width about 13 cm), then tries 210 combinations of motor, wheel, driver and battery. It marks the TT motors, 65 mm wheels, DRV8833 and ESP32 camera board you own as "have", and the boost converter, ultrasonic sensor and lamp as "to buy".</li>
+<li>The verdict: <em>"Should do the job, with 5 things to watch"</em> (for example, a stalled motor would overheat the small driver; the ultrasonic echo needs a voltage divider; the 96×96 camera is far below what the task needs).</li>
+<li><em>Watch it work</em> drives the machine through a simulated pipe.</li>
+<li>The stress test (16 s): it is fine until mud eats 60 % of the pulling force, and <strong>fails every run if a drive motor dies</strong> (a 2-wheel rover circles). The weakest point is named, with the suggestion "a drive layout with more motors keeps some drive on both sides". The "not tested" list includes blocked pipes, darkness and real cracks.</li>
+<li>The build sheet lists the 9 parts with sources, the GPIO-to-driver pin table, and steps that start with "set the boost converter to 5.1 V before connecting any board".</li>
+<li><em>Use on my real rover</em> copies the size and camera mount to the Hardware tab; the user connects <code>COM6</code>, ticks the checklist and drives with the live camera view.</li>
+</ol>
+<hr />
+<h2 id="7-measured-results">7. Measured results</h2>
+<p>All numbers are measured on this project's machine (Intel Core 7 240H, RTX 5050 8 GB, Windows 11). <strong>Simulator data unless stated.</strong></p>
+<h3 id="71-camera-detector-and-sewer-missions-original-sewerbot">7.1 Camera detector and sewer missions (original Sewerbot)</h3>
+<p>RF-DETR Nano, 25 epochs, 55 minutes, dataset <code>sewer_v1</code> (4,300 train / 650 valid / 450 test images from 3 maps × 3 rovers × 4 random-defect seeds, about half with no defect):</p>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>Precision</th>
+<th>Recall</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Crack</td>
+<td>91.6 %</td>
+<td>84.5 %</td>
+</tr>
+<tr>
+<td>Leak</td>
+<td>92.8 %</td>
+<td>85.8 %</td>
+</tr>
+</tbody>
+</table>
+<p>Validation mAP@50:95 = 0.70; 28 ms per frame. The training-free OpenCV baseline scored 1–3 % precision on the same frames.
+<strong>Whole missions:</strong> <code>star_five_goals</code>, all 5 goal posts visited, <strong>16 of 16</strong> planted defects found (5 false alarms, 76 % precision, before a later refactor). After the refactor the same mission still found 16/16 but with <strong>9 false alarms (64 %)</strong>; both fast and real-time modes agree and <strong>we did not find why</strong>. Speed sweep with 60 ms motion blur: recall stayed at 12 of 14 from 0.2 to 1.5 m/s; precision rose from 67 % to 100 % as speed rose (slow runs give a stray detection more chances to be confirmed).</p>
+<h3 id="72-the-simulator-itself">7.2 The simulator itself</h3>
+<ul>
+<li>Rover top speed 0.500 m/s against 0.5 specified; acceleration 0.599 against 0.6; turn rate 1.500 against 1.5 rad/s; no sideways drift.</li>
+<li>Drone hovers within 3 cm and 1° on a 45 g quad, a 650 g quad and a 1.8 kg hex; a steady 6 m/s wind is rejected to under 0.15 m/s.</li>
+<li>Boat floats at its predicted draft (±1 cm); top speed 5.04 m/s against 4.9 estimated.</li>
+<li>Speed: 5,400 rover policy steps per second per core; 3,900 per second across 8 training processes; onboard camera 13 ms (320×240) to 21 ms (640×480).</li>
+</ul>
+<h3 id="73-learning-honest">7.3 Learning (honest)</h3>
+<p>Classical baselines: rover <code>goto</code> 154/160 goals reached with zero contact; drones 150/150; <code>search</code> 18/18 for the faster machines.
+PPO (8 simulators): the rover policy reached the goal 98 % of the time but <strong>scraped obstacles (21 contact steps per episode)</strong> where the baseline touched nothing; doubling the training and tripling the collision penalty made it <em>worse</em> (93 %, 62 contact steps). The drone policy matched the baseline (100 %) but was slightly slower. <strong>Conclusion stated in the repository: the learned policies match the classical controllers; they are not better.</strong> A camera detector (RF-DETR) trained on drone views found crates, barrels and balls with 94.7–97.6 % precision and 100 % recall (an easy problem: distinct solid colours).</p>
+<h3 id="74-the-builder-against-published-data">7.4 The Builder against published data</h3>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Published</th>
+<th>Model</th>
+<th>Error</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pololu HP motors, maximum output power (3 motors)</td>
+<td>1.3 / 1.4 / 1.3 W</td>
+<td>torque × speed / 4</td>
+<td>+0.2 / −2.3 / +4.1 %</td>
+</tr>
+<tr>
+<td>Pololu maximum-efficiency point</td>
+<td>490 rpm, 0.32 A</td>
+<td>487 rpm, 0.36 A</td>
+<td>−0.6 % speed, +12.5 % current</td>
+</tr>
+<tr>
+<td>Pololu Zumo, two gear ratios (wheel radius fitted on the third)</td>
+<td>measured speeds</td>
+<td>predicted</td>
+<td>−7.5 % and −1.2 %</td>
+</tr>
+<tr>
+<td>BrotherHobby 2306 motor + 5×4 prop on 4S: current at five thrusts</td>
+<td>1.3 / 2.7 / 8.0 / 17.2 / 31.1 A</td>
+<td>fitted curve</td>
+<td>+11.1 / −9.1 / −7.2 / −1.1 / 0 %</td>
+</tr>
+</tbody>
+</table>
+<p>(The curve is fitted at its top point, so the 0 % there is by construction.) A calibrated vehicle then reproduces the measured top speed within 4 %, a spin within 12 %, and time-to-90 % within about a third. One counter-example is kept on purpose: a common TT motor's datasheet says 200 rpm while a measurement gave 250, which is why every part shows its confidence.</p>
+<h3 id="75-builder-designed-machines-in-the-simulator">7.5 Builder-designed machines in the simulator</h3>
+<p>5-inch quad <code>hover_hold</code> 10/10; F550-class hexacopter <code>waypoints_easy</code> 10/10 (thrust-to-weight 1.33); boat top speed 6.16 m/s against 5.91 estimated. A scenario sweep of about 30 builds across ground, air and water behaved as expected: each broken build is refused for the right reason (no boost converter → brown-out error; a 2.5 kg payload on a small frame → "will not fly"; ballast beyond displacement → "sinks").</p>
+<h3 id="76-the-goal-layer-and-stress-tests">7.6 The Goal layer and stress tests</h3>
+<ul>
+<li>Designer speed: 2–4 seconds per goal.</li>
+<li>Pipe rover stress test (4 runs per level, 16 s): mud passes to 30 % of the pulling force and fails from 60 %; a dead drive motor fails every run.</li>
+<li>1.2 m boat (23 conditions, about 2.5 minutes): wind passes to 12 m/s and fails at 16; losing the only thruster fails every run; a jammed rudder 25 % success; fixed obstacles: 6 or 15 in the way give 50 %, 30 give 0 %.</li>
+<li>Drone: wind passes to 8 m/s, 50 % at 12, fails at 16 and 20; <strong>one failed rotor flips it every time</strong> (the simple autopilot has no fault-tolerant control).</li>
+</ul>
+<p><strong>The AI planner against a real model</strong> (2 November 2026, NVIDIA Nemotron 3 Ultra 550 B through OpenRouter's free tier; each plan stage used 1 to 2 of the 50 daily requests and took about 1.5 to 3.5 minutes):</p>
+<table>
+<thead>
+<tr>
+<th>Job typed</th>
+<th>What happened</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>"A boat that goes out to people trapped by a flood and brings help, even in strong wind and rough water."</td>
+<td>Asked three questions (range, load, night operation), then wrote a plan with 6 scenarios (5 simulatable: waves, wind, current, debris, thruster failure, combined storm; 1 not testable). <strong>No design in the library met every requirement</strong>, and the page said so ("Closest we found", red): 24 cm of freeboard against about 42 cm advised for 0.6 m waves, and a thrust-to-weight ratio of 1.5 that the model had inferred as a requirement but the best design reached only 0.30 of (the model's inference may itself have been too demanding for a boat; the page labels it "the AI's inference"). The 25-condition stress test (about 9 minutes) found waves and wind and current handled up to the asked levels, <strong>fixed obstacles the weakest point (fails from 6 in the way, 15 asked: not covered)</strong> and a jammed rudder failing every run</td>
+</tr>
+<tr>
+<td>"Map an underwater cave system, going 30 metres deep, and bring back 3D scans."</td>
+<td>Answered <strong>unsupported</strong> in one request, with the reason (needs a pressure-rated submersible, none of the three machine types). No machine was invented</td>
+</tr>
+<tr>
+<td>"A small rover that drives along the rows of my vegetable field after rain and checks the plants for disease with a camera."</td>
+<td>A ground rover design that <strong>met every requirement but was marked amber</strong>: the Builder's electrical check found the ultrasonic sensor's 5 V output wired to a 3.3 V pin, which the model had missed ("add a level shifter"). The simulator's ground menu only has "pipe width", so the field rover was checked as if it had to fit a 50 cm pipe</td>
+</tr>
+</tbody>
+</table>
+<p>These runs also showed three faults in the project's own code, now fixed (section 8).</p>
+<hr />
+<h2 id="8-quality-testing-and-how-the-software-found-its-own-mistakes">8. Quality, testing and how the software found its own mistakes</h2>
+<ul>
+<li><strong>479 automated tests</strong> (27 test files, no Webots or hardware needed; the AI planner is tested against a local fake of OpenRouter, so no key, internet or quota is used): physics identities (a motor at rated voltage unloaded turns at rated rpm), monotonicity (more mass is slower; more cells is faster), electrical rules, the API, safety interlocks, the hazard hooks, report contents (a test checks that no report contains the word "safe" and that every report lists what was not tested), and the Webots backend against a fake controller.</li>
+<li><strong>Honesty rules enforced in code:</strong> a report always has a "not tested" list; the build sheet only generates wiring for the verified rover; the designer says "nothing in the library meets this" instead of faking a pass; every part shows its source and confidence.</li>
+<li><strong>Mistakes the project's own tools caught:</strong> (1) the stress test showed the first rescue-boat controller failed even in calm water (a heavy boat approached too fast to stop), so it now brakes according to its own thrust-to-weight; (2) the stress test showed the designer's "best" 3 m boat was blown away by 8 m/s wind, so a wind-versus-thrust requirement was added; (3) the mud hazard first barely changed anything because the traction model is stiff, so it now cuts speed by the share of force used up. (4) Running the AI planner for real found three faults that the fake server had hidden: OpenRouter refuses the Inkling models to ordinary API clients with a 403 ("only for agentic harnesses"), which the software mislabelled as "bad key" and which stopped its fallback chain (now: the model is skipped, remembered for six hours so it does not cost a request again, and the next model is used); a reasoning model spends its output budget thinking, so a 3,500-token limit cut the plan off mid-answer (now 8,000, and a cut-off answer is asked again, shorter, and recorded on screen); and a thinking model may print a small example object before its real answer (the reader now takes the largest complete object, not the first). (5) The ready-made "Rescue on the water" job pointed at an idle sandbox, so "Watch it work" never showed a rescue; it now runs the real rescue task. Earlier: two library entries with wrong numbers (a 75C battery pack giving 112 A; a frame envelope) were caught by sanity tests, a Windows networking bug (two programs sharing one port, so the rover's first message vanished) was found and fixed, and a leaked port from a test was caught by the full run.</li>
+<li><strong>Reproducibility:</strong> every run is seeded; the hazard levels share scenes; results in this document come from scripts in the repository.</li>
+</ul>
+<hr />
+<h2 id="9-honest-limits-and-what-is-not-done">9. Honest limits and what is not done</h2>
+<ol>
+<li><strong>No real-world proof.</strong> Nothing here has been shown on real pipes, real water or a real drone. The simulator's cracks and leaks are procedural textures; a detector trained on them will not read real concrete reliably. A path to fix this exists (capture frames from the real camera, label them, fine-tune; <code>docs/TRAINING.md</code>).</li>
+<li><strong>The real rover is not yet running.</strong> Its motors currently hum without turning (a hardware problem being repaired). The USB link and the new firmware were verified against a software emulator and by compiling; <strong>the new firmware has not been flashed</strong>.</li>
+<li><strong>The real camera is too small for detection.</strong> It streams 96×96 pixels; real cracks cannot be resolved. In the real-rover flow the camera is for driving and for saving frames; detection is demonstrated in the simulator.</li>
+<li><strong>Estimates are optimistic until calibrated.</strong> The Builder's predictions come from datasheets; expect tens of percent error until the user enters measurements (calibration exists for ground vehicles only; air and water are first guesses).</li>
+<li><strong>Learned control policies are not better than the classical ones</strong> (section 7.3), and none has been transferred to hardware.</li>
+<li><strong>The boat wave model is simple.</strong> Waves act through buoyancy only (no breaking waves, slamming, diffraction or horizontal wave force), so "passes at 0.9 m waves" is the easy half of the question. Fixed obstacles do not move when hit.</li>
+<li><strong>Stress tests use a simple built-in controller</strong>, and test only what is listed. A better controller may do better; hazards not modelled are not tested.</li>
+<li><strong>An unexplained difference:</strong> the Webots star-map mission gives 9 false alarms against 5 before a refactor, and the cause is unknown.</li>
+<li><strong>The AI planner is only as good as a free model.</strong> It is slow (1.5 to 3.5 minutes per stage), the free tier allows about 50 requests a day shared by every free model (so roughly 15 to 25 plans a day), and free endpoints come and go. It ignores limits it is told (it asked for 100 to 150 kg where the simulator carries 20) and infers requirements that may be unreasonable (a thrust ratio of 1.5 for a boat). The checker catches the first kind and labels the second ("the AI's inference"), but a plan is a <em>proposal</em>, not engineering advice. The three designs of three live runs are not a statistical sample.</li>
+<li><strong>The AI can only choose among what the simulator can test.</strong> It will think of hazards that are not modelled (breaking waves, corrosion, rain on a lens, uneven ground); these appear as "not testable here" and in the <em>not tested</em> list, never as a pass. A job outside the menu is stretched, not refused: the ground menu only knows pipe width, distance and wet floors, so a field rover is checked as if it had to fit a 50 cm pipe. The planner cannot design a machine the parts library lacks.</li>
+<li><strong>Visuals are typical designs, not CAD.</strong> The 3D models are procedural and look like a rescue boat, a pipe rover and a quadcopter; they are not a particular product. Waves in the 3D view match the physics for the boat only; the drone's and rover's physics are unchanged.</li>
+<li><strong>Not built:</strong> prices and availability, a drifting person in the rescue task, firmware generation, driving real drones or boats (the hardware link exists only for the ESP32 rover), fixed-wing aircraft, a motor thermal model, autonomous driving on the real rover (it has no encoders or IMU to know where it is).</li>
+</ol>
+<hr />
+<h2 id="10-safety-ethics-and-licensing">10. Safety, ethics and licensing</h2>
+<ul>
+<li><strong>Physical safety.</strong> The rover interlock (checklist, stop always available, heartbeats, obstacle refusal, watchdogs on both sides) exists because a wrong command to a real motor can injure someone or break the machine. Build sheets carry specific warnings (battery polarity, setting the boost converter before connecting boards, propellers off for bench tests, LiPo handling, sealing electronics on a boat, a kill switch).</li>
+<li><strong>No safety claims.</strong> The software never says a machine is "safe"; it says what was tested, to what level, and what was not.</li>
+<li><strong>Use of the drone goal.</strong> The drone goal is <strong>observation only</strong> (search and watch). The platform does not design, test or support intercepting or disabling other aircraft.</li>
+<li><strong>Licences.</strong> Webots and RF-DETR Nano/Small/Medium/Large are Apache-2.0; OpenCV, NumPy, FastAPI and PyTorch are BSD/MIT-style. The AGPL Ultralytics YOLO family is deliberately <strong>not</strong> installed (using it would require open-sourcing the whole project). No public datasets were used: textures and defects are generated by this repository. See <code>docs/LICENSING.md</code>.</li>
+<li><strong>Data.</strong> Everything runs on the user's computer, with <strong>one optional exception</strong>: the AI planner. If (and only if) an OpenRouter key is set, the job sentence, the user's answers to the AI's questions, and the public parts list and menu are sent to OpenRouter and the model provider. <strong>Free models may keep what is sent</strong>, so a job description should not contain anything confidential; the settings box and <code>docs/PLANNER.md</code> say so. Nothing else is sent: not the machine designs the user saves, not the hardware, not the camera frames, not the key itself beyond the request header. With no key set (the default), nothing leaves the machine and the offline planner is used. The key is stored in a git-ignored file or an environment variable and is never shown again in the browser.</li>
+<li><strong>Model terms.</strong> Some free models are open only to approved apps: OpenRouter refuses the Inkling models to ordinary API clients, and this project does not disguise itself as one of those apps. It uses a model that serves ordinary clients instead.</li>
+</ul>
+<hr />
+<h2 id="11-how-to-run-it-and-a-five-minute-demo">11. How to run it and a five-minute demo</h2>
+<p><strong>Run:</strong> double-click <code>startup.bat</code> (or <code>.venv\Scripts\python.exe -m sewerbot</code>), open <code>http://127.0.0.1:8000</code>. Tests: <code>.venv\Scripts\python.exe -m pytest -q</code>. Setup notes: <code>docs/SETUP.md</code>.</p>
+<p><strong>A five-minute demonstration</strong>
+1. <strong>Goal tab, offline path</strong> (1 min): open <em>Ready-made jobs</em>, choose <em>Inspect pipes</em>, tick <em>My ESP32 rover kit</em>, press <em>Design my machine</em>. Point out the traffic light, what it meets, and "you have / to buy".
+2. <strong>Watch it work</strong> (30 s): the yellow rover drives through the textured concrete pipe with its camera view.
+3. <strong>How tough is it?</strong> (1 min, 16 s of compute): show where it fails and the "not tested" list. Open the full report.
+4. <strong>Build sheet</strong> (30 s): parts with sources, the pin table, safety box.
+5. <strong>The AI planner</strong> (needs a key and 2 to 4 minutes, so start it first and talk while it runs): describe a flood-rescue boat in your own words; show the live phases, the questions, <strong>"What could go wrong"</strong> with the ✓ / ✗ marks, then the honest red "Closest we found". Then type an underwater-cave job to show the <strong>refusal</strong>.
+6. <strong>Watch in the worst conditions</strong> (30 s): the orange boat on animated 0.6 m waves in 15 m/s wind.
+7. <strong>Hardware tab</strong> (1 min): press <em>Try USB emulator</em>, show the checklist locking the controls, unlock, drive, show the obstacle-refusal behaviour.</p>
+<hr />
+<h2 id="12-repository-map">12. Repository map</h2>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>What is in it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>simlab/spec</code>, <code>vehicles</code>, <code>registry.py</code></td>
+<td>Machines as data: schemas, kinds, presets</td>
+</tr>
+<tr>
+<td><code>simlab/backends</code></td>
+<td>MuJoCo (plants, XML, sensors, rendering) and Webots adapter</td>
+</tr>
+<tr>
+<td><code>simlab/tasks</code>, <code>control</code></td>
+<td>Tasks and their classical controllers</td>
+</tr>
+<tr>
+<td><code>simlab/train</code>, <code>perception</code></td>
+<td>Reinforcement learning; detector capture/training/evaluation</td>
+</tr>
+<tr>
+<td><code>simlab/parts</code></td>
+<td>The Builder: library, schema, derivation, rules, recommender, calibration, preview</td>
+</tr>
+<tr>
+<td><code>simlab/llm</code></td>
+<td>The AI planner: OpenRouter client (streaming, retries, model fallback), settings and the private key file, the menu, prompt builder, plan validation and clamping, requirement metrics, the planning flow</td>
+</tr>
+<tr>
+<td><code>simlab/goals</code>, <code>simlab/hazards</code></td>
+<td>Goal catalogue, matcher, designer, build sheet; hazard catalogues, sweep engine, reports, and <code>synth.py</code> that turns an AI stress plan into a sweep</td>
+</tr>
+<tr>
+<td><code>simlab/dashboard/static/models</code></td>
+<td>The 3D vehicle models (boat, rover, drone, people, debris, pipe materials)</td>
+</tr>
+<tr>
+<td><code>simlab/plugins</code></td>
+<td>The boat plug-in and its presets</td>
+</tr>
+<tr>
+<td><code>simlab/world</code></td>
+<td>Pipe geometry for the MuJoCo pipe environment</td>
+</tr>
+<tr>
+<td><code>simlab/dashboard</code>, <code>sewerbot/dashboard</code></td>
+<td>The server and the browser pages</td>
+</tr>
+<tr>
+<td><code>sewerbot/core</code>, <code>brain</code></td>
+<td>Sewer geometry, rover profiles, detectors, tracker, mission, reports</td>
+</tr>
+<tr>
+<td><code>sewerbot/hardware</code></td>
+<td>The Wi-Fi and USB rover drivers, camera client, emulators</td>
+</tr>
+<tr>
+<td><code>firmware/</code></td>
+<td><code>esp32_rover</code> (Wi-Fi), <code>esp32_rover_serial</code> (USB), <code>esp32cam_stream</code>, <code>arduino_sensor_hub</code></td>
+</tr>
+<tr>
+<td><code>maps/</code>, <code>tools/</code></td>
+<td>Sewer maps; world generator, dataset capture, training and evaluation scripts</td>
+</tr>
+<tr>
+<td><code>tests/</code></td>
+<td>27 test files, 479 tests (<code>fake_openrouter.py</code> is a local stand-in for the AI service)</td>
+</tr>
+<tr>
+<td><code>docs/</code></td>
+<td><code>GOAL.md</code>, <code>PLANNER.md</code>, <code>BUILDER.md</code>, <code>LAB.md</code>, <code>HARDWARE.md</code>, <code>TRAINING.md</code>, <code>SETUP.md</code>, <code>LICENSING.md</code>, <code>RESULTS.md</code>, <code>RESULTS_LAB.md</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="13-glossary">13. Glossary</h2>
+<ul>
+<li><strong>Policy</strong> – the thing that decides what a machine does (a hand-written controller, or one learned by RL).</li>
+<li><strong>Baseline</strong> – the classical controller a learned policy must beat.</li>
+<li><strong>Reinforcement learning (RL)</strong> – learning by trial and reward in many simulated runs.</li>
+<li><strong>Segmentation image</strong> – a second render where every object has its own colour, giving exact labels.</li>
+<li><strong>Domain gap (sim-to-real)</strong> – the difference between simulated and real images or physics, which makes simulator-trained models unreliable on real data.</li>
+<li><strong>Thrust-to-weight (TWR)</strong> – total thrust divided by weight; a drone needs well over 1 to fly and about 2 to have reserve.</li>
+<li><strong>Brown-out</strong> – a controller resetting because its supply voltage dips (the documented problem of an ESP32 on 4×AA cells without a boost converter).</li>
+<li><strong>Freeboard / draft</strong> – height of the hull above / depth below the water.</li>
+<li><strong>Significant wave height (Hs)</strong> – the usual measure of how rough the water is.</li>
+<li><strong>ODD (operating design domain)</strong> – the conditions a machine is designed to operate in; stress testing explores its edges.</li>
+<li><strong>Fault injection</strong> – deliberately making a part fail to see what the machine does.</li>
+<li><strong>Calibration</strong> – measuring the real machine and correcting the model to match.</li>
+<li><strong>Confidence badge</strong> – the label on every part's numbers: datasheet, typical, assumed or measured.</li>
+</ul>
+<hr />
+<h2 id="14-where-it-goes-next">14. Where it goes next</h2>
+<ol>
+<li><strong>Fix and flash the rover</strong>, then measure it (speed, spin, runtime) and calibrate its twin in the Builder: the first real check of the whole chain.</li>
+<li><strong>A sharper camera</strong> and fine-tuning the detector on real frames, to close the simulator-to-real gap.</li>
+<li><strong>Position feedback</strong> (wheel encoders or an IMU) so the real rover can follow a route by itself.</li>
+<li><strong>A richer boat and drone model</strong> (breaking waves, a fault-tolerant autopilot) and more goals in the catalogue.</li>
+<li><strong>Prices and availability</strong> in the parts library, and a free-text mode with an optional language model (kept optional so the tool still works offline).</li>
+<li><strong>Real-hardware links for drones and boats</strong>, built carefully, with the same interlocks as the rover.</li>
+</ol>
+</main></body></html>
