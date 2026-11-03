@@ -19,8 +19,7 @@
   <a href="#how-it-works">How it works</a> ·
   <a href="#the-rover-loop">The rover loop</a> ·
   <a href="#quick-start-windows">Quick start</a> ·
-  <a href="#whats-in-the-box">What is in the box</a> ·
-  <a href="#honest-limits">Honest limits</a>
+  <a href="#whats-in-the-box">What is in the box</a>
 </p>
 
 <p align="center"><sub><b>RoboForge</b> is the project's name; the Python packages and folders keep their older names (<code>simlab/</code>, <code>sewerbot/</code>).</sub></p>
@@ -145,13 +144,5 @@ Cracks and leaks are found by a detector (RF-DETR trained on simulator data, or 
 | Tests | `tests/` | `pytest -q`: 900+ tests (Webots and hardware are not needed) |
 
 Results at a glance (simulator data): RF-DETR Nano on 450 unseen images found cracks at 92 % precision / 85 % recall and leaks at 93 % / 86 %, 28 ms per frame; a 5-goal mission found 16 of 16 planted defects. Details: [docs/RESULTS.md](docs/RESULTS.md).
-
-## Honest limits
-
-* The reality-gap loop and the bag/box missions are proven on an emulated rover and in simulation only. Nothing has been verified on the physical rover yet.
-* A detector trained only on simulated cracks is not reliable on real concrete; capture your own frames and fine-tune ([docs/TRAINING.md](docs/TRAINING.md)).
-* The rover has a 96×96 camera and no wheel encoders. Detection range is short, and distance comes from tape, camera or an ultrasonic sensor.
-* Without battery or rail dividers the app cannot see the battery; it asks for a multimeter reading before real runs.
-* Wi-Fi barely penetrates underground sewers; the hardware path targets bench, test-pipe and demo use.
 
 Licensing summary: [docs/LICENSING.md](docs/LICENSING.md). Re-record the clips with `tools/record_demo.py`; the banner is drawn by `tools/make_banner.py`.
