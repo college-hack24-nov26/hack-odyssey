@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/media/banner.png" alt="simlab: describe a machine, simulate it, test the real one, measure the gap and fix it" width="100%">
+  <img src="docs/media/banner.png" alt="RoboForge: describe a machine, simulate it, test the real one, measure the gap and fix it" width="100%">
 </p>
 
 <p align="center">
@@ -23,13 +23,15 @@
   <a href="#honest-limits">Honest limits</a>
 </p>
 
+<p align="center"><sub><b>RoboForge</b> is the project's name; the Python packages and folders keep their older names (<code>simlab/</code>, <code>sewerbot/</code>).</sub></p>
+
 ---
 
 ## See it work
 
 **Chat to a design.** Pick an example (or describe a job): the app writes down what it understood, picks a machine from sourced parts, runs it in 3D, builds a set of tough-conditions tests, runs them all, and says what it could *not* test.
 
-<p align="center"><img src="docs/media/chat.gif" alt="The chat page: a sewer-pipe rover is designed, watched in 3D and stress-tested" width="92%"></p>
+<p align="center"><img src="docs/media/chat.gif" alt="RoboForge's chat page: a sewer-pipe rover is designed, watched in 3D and stress-tested" width="92%"></p>
 <p align="center"><sub>Real recording of the running app ( <a href="docs/media/chat.mp4">mp4</a> ). Waiting stretches are sped up 4×. The AI planner was switched off for this clip, so everything shown is the offline draft.</sub></p>
 
 **Find where the real rover differs from the simulation.** The rover is driven through a few short, firmware-timed moves. A gyro measures how it turns, and the tool names the weak motor and works out the correction, then re-measures.

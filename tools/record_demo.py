@@ -239,7 +239,9 @@ class Scene:
 
 # ------------------------------------------------------------------ the scenes
 def scene_chat(s: Scene, base: str):
-    s.go(f"{base}/chat", 2.0)
+    s.go(f"{base}/chat", 1.0)
+    s.c.eval("try { localStorage.setItem('simlab.chat.theme', 'light'); } catch (e) {} document.documentElement.setAttribute('data-theme', 'light'); 1")   # the README clips are light themed
+    s.pause(1.0)
     s.pause(1.5)
     s.click(".ch-chip", "sewer pipe", settle=1.0)
     s.wait_for("document.querySelectorAll('.ch-card-h').length >= 3", 30, fast=False)
@@ -252,7 +254,9 @@ def scene_chat(s: Scene, base: str):
 
 
 def scene_shell(s: Scene, base: str):
-    s.go(f"{base}/chat", 2.0)
+    s.go(f"{base}/chat", 1.0)
+    s.c.eval("try { localStorage.setItem('simlab.chat.theme', 'light'); } catch (e) {} document.documentElement.setAttribute('data-theme', 'light'); 1")
+    s.pause(1.0)
     s.click(".ch-chip", "sewer pipe", settle=1.0)
     s.wait_for("document.querySelectorAll('.ch-card-h').length >= 3", 30, fast=False)
     s.pause(2.0)
@@ -306,7 +310,7 @@ def main(argv=None) -> int:
     ap.add_argument("--base", default="http://127.0.0.1:8000")
     ap.add_argument("--out", default="docs/media")
     ap.add_argument("--lines", help="terminal scene: JSON file of captured lines")
-    ap.add_argument("--title", default="rover loop on the simulated rover")
+    ap.add_argument("--title", default="RoboForge: the rover loop on the simulated rover")
     a = ap.parse_args(argv)
     out = Path(a.out)
     if a.scene == "terminal":
