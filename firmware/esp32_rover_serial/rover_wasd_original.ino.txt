@@ -1,0 +1,124 @@
+/*
+  ESP32 + DRV8833 + 2WD rover  -  WASD control over USB serial (115200 baud)
+
+  Keys (send from wasd_control.py, or type them in a serial monitor):
+    w  forward        s  backward
+    a  spin left      d  spin right
+    space / x  stop
+    e / q  speed up / down
+    t  run a self-test (forward, back, spin left, spin right)
+    .  heartbeat (sent automatically by wasd_control.py)
+
+  Safety: once heartbeats start arriving, the motors stop if nothing is
+  received for 1 second.
+
+  Wiring (module labels), ESP32-CAM (ESP32_CAM_PINS 1):
+                          IO13 IN1, IO12 IN2 (left, OUT1/OUT2)
+                          IO14 IN3, IO15 IN4 (right, OUT3/OUT4)
+  Wiring, ESP32 DevKit (ESP32_CAM_PINS 0):
+                          GPIO26 IN1, GPIO27 IN2 (left, OUT1/OUT2)
+                          GPIO32 IN3, GPIO33 IN4 (right, OUT3/OUT4)
+          EEP (sleep): left empty if the module's J1 jumper already holds it high,
+          otherwise wired to 3V3. ULT (fault) is left empty.
+          ESP32 GND shared with module GND.
+  Requires Arduino-ESP32 core 3.x.
+*/
+
+// 1 = AI-Thinker ESP32-CAM (only IO12/13/14/15 are free on its header and its
+//     DRV8833 inputs have pulldowns, so IO12 stays low at boot as required)
+// 0 = normal ESP32 DevKit
+#ifndef ESP32_CAM_PINS
+#define ESP32_CAM_PINS 0
+#endif
+
+#if ESP32_CAM_PINS
+const int AIN1 = 13, AIN2 = 12;           // left motor  (module IN1, IN2)
+const int BIN1 = 14, BIN2 = 15;           // right motor (module IN3, IN4)
+#else
+const int AIN1 = 26, AIN2 = 27;           // left motor
+const int BIN1 = 32, BIN2 = 33;           // right motor
+#endif
+
+const int PWM_FREQ = 20000;
+const int PWM_BITS = 8;                   // duty 0..255
+const int MIN_DUTY = 90;                  // below this TT motors just hum
+const int SPEED_STEP = 25;
+const unsigned long WATCHDOG_MS = 1000;
+
+int speedLevel = 180;                     // 100..255
+int dirL = 0, dirR = 0;                   // -1, 0, +1
+bool heartbeatSeen = false;
+unsigned long lastByteMs = 0;
+
+// Forward = PWM on xIN1, xIN2 low. Reverse = the opposite. 0 = coast.
+void setMotor(int pinA, int pinB, int speed) {         // speed: -255..255
+  speed = constrain(speed, -255, 255);
+  int duty = abs(speed);
+  if (duty > 0 && duty < MIN_DUTY) duty = MIN_DUTY;
+  ledcWrite(pinA, speed > 0 ? duty : 0);
+  ledcWrite(pinB, speed < 0 ? duty : 0);
+}
+
+void drive(int left, int right) {
+  setMotor(AIN1, AIN2, left);
+  setMotor(BIN1, BIN2, right);
+}
+
+void apply() { drive(dirL * speedLevel, dirR * speedLevel); }
+
+void go(int l, int r, const char *name) {
+  dirL = l; dirR = r;
+  apply();
+  Serial.println(name);
+}
+
+void selfTest() {
+  Serial.println("Self-test: wheels should be off the ground");
+  go(1, 1, "test: forward");     delay(1500);
+  go(0, 0, "test: stop");        delay(400);
+  go(-1, -1, "test: backward");  delay(1500);
+  go(0, 0, "test: stop");        delay(400);
+  go(-1, 1, "test: spin left");  delay(1000);
+  go(0, 0, "test: stop");        delay(400);
+  go(1, -1, "test: spin right"); delay(1000);
+  go(0, 0, "test: done");
+}
+
+void handleKey(char c) {
+  switch (tolower(c)) {
+    case 'w': go(1, 1, "forward");     break;
+    case 's': go(-1, -1, "backward");  break;
+    case 'a': go(-1, 1, "spin left");  break;
+    case 'd': go(1, -1, "spin right"); break;
+    case ' ':
+    case 'x': go(0, 0, "stop");        break;
+    case 'e':
+      speedLevel = min(255, speedLevel + SPEED_STEP);
+      apply(); Serial.printf("speed %d\n", speedLevel); break;
+    case 'q':
+      speedLevel = max(100, speedLevel - SPEED_STEP);
+      apply(); Serial.printf("speed %d\n", speedLevel); break;
+    case 't': selfTest(); break;
+    case '.': heartbeatSeen = true; break;
+    default: break;                        // ignore CR/LF and unknown keys
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  for (int p : {AIN1, AIN2, BIN1, BIN2}) ledcAttach(p, PWM_FREQ, PWM_BITS);
+  drive(0, 0);
+  lastByteMs = millis();
+  Serial.println("Rover ready. w/a/s/d to drive, space to stop, t for self-test.");
+}
+
+void loop() {
+  while (Serial.available()) {
+    handleKey((char)Serial.read());
+    lastByteMs = millis();
+  }
+  if (heartbeatSeen && millis() - lastByteMs > WATCHDOG_MS) {
+    heartbeatSeen = false;
+    go(0, 0, "link lost - stopped");
+  }
+}
