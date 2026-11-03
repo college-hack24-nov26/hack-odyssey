@@ -1,0 +1,25 @@
+<mujoco model="cart">
+  <!-- A two-wheel cart with a front caster, written the way a user would write any MuJoCo robot. -->
+  <compiler angle="radian"/>
+  <default><geom friction="1 0.005 0.0001"/></default>
+  <worldbody>
+    <body name="cart" pos="0 0 0.07">
+      <freejoint name="cart_root"/>
+      <geom name="cart_body" type="box" size="0.2 0.12 0.04" mass="2" rgba="0.2 0.6 0.9 1"/>
+      <geom name="caster" type="sphere" size="0.02" pos="0.17 0 -0.05" friction="0 0 0" mass="0.05"/>
+      <body name="wheel_l" pos="-0.05 0.14 -0.01">
+        <joint name="joint_l" type="hinge" axis="0 1 0"/>
+        <geom type="cylinder" size="0.06 0.015" euler="1.5708 0 0" mass="0.2" rgba="0.1 0.1 0.1 1"/>
+      </body>
+      <body name="wheel_r" pos="-0.05 -0.14 -0.01">
+        <joint name="joint_r" type="hinge" axis="0 1 0"/>
+        <geom type="cylinder" size="0.06 0.015" euler="1.5708 0 0" mass="0.2" rgba="0.1 0.1 0.1 1"/>
+      </body>
+      <camera name="front_cam" pos="0.2 0 0.05" xyaxes="0 -1 0 0 0 1" fovy="60"/>
+    </body>
+  </worldbody>
+  <actuator>
+    <velocity name="left_motor" joint="joint_l" kv="2" ctrlrange="-12 12"/>
+    <velocity name="right_motor" joint="joint_r" kv="2" ctrlrange="-12 12"/>
+  </actuator>
+</mujoco>
