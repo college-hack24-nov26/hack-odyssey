@@ -14,12 +14,26 @@ from __future__ import annotations
 import re
 import threading
 import time
+from collections import deque
 
 LEVEL_MIN, LEVEL_MAX, LEVEL_STEP, LEVEL_DEFAULT = 100, 255, 25, 180
 HEARTBEAT_S = 0.2
 TX_PERIOD = 0.05
 SENSOR_STALE_S = 1.5
 _TEL = re.compile(r"(\w+)=(-?[\w.]+)")
+_KV = re.compile(r"(\w+)=(\S+)")                       # firmware v2 lines: values may hold commas, a leading '-' or 0x...
+V2_PREFIXES = ("hello", "gyro", "mv", "i2cscan", "cfg", "saved", "warn", "err", "d", "defaults")
+
+
+def parse_kv(line: str) -> dict:
+    """'hello fw=2.0.0 mpu=1 pins=26,27' -> {'fw': '2.0.0', 'mpu': 1.0, 'pins': '26,27'}; numbers become floats, everything else stays text."""
+    out: dict = {}
+    for k, v in _KV.findall(line):
+        try:
+            out[k] = float(v)
+        except ValueError:
+            out[k] = v
+    return out
 _MOTION = {"forward": "F", "backward": "B", "spin left": "L", "spin right": "R", "stop": "S"}
 _SIGN = {"F": (1, 0), "B": (-1, 0), "L": (0, 1), "R": (0, -1), "S": (0, 0)}      # (linear, angular); positive angular = left
 
@@ -49,6 +63,9 @@ def open_port(target: str, baud: int):
     if name.lower() == "mock":
         from .mock import MockSerialPort
         return MockSerialPort()
+    if name.lower() in ("mock-v2", "mock2"):                       # the firmware v2 emulator (gyro, '!' commands), a simulated rover
+        from .mock_v2 import MockSerialPortV2
+        return MockSerialPortV2()
     try:
         import serial
     except ImportError as e:
@@ -68,9 +85,15 @@ class SerialRover:
     link = "serial"
 
     def __init__(self, target: str, baud: int = 115200, opener=open_port, boot_wait: float = 2.5, guard_cm: float = 15.0,
-                 vmax_ref: float = 0.20, yaw_ref: float = 1.3, ref_level: int = LEVEL_DEFAULT, calibrated: bool = False):
+                 vmax_ref: float = 0.20, yaw_ref: float = 1.3, ref_level: int = LEVEL_DEFAULT, calibrated: bool = False,
+                 us_guard: bool = True):
         self.target, self.baud = target, baud
         self.guard_cm = float(guard_cm)
+        self.us_guard = bool(us_guard)                          # False until the HC-SR04 has been confirmed to work: its readings never block driving
+        self.hello: dict = {}                                    # firmware v2: the last 'hello' line, parsed
+        self.lines: deque = deque(maxlen=300)                    # (time, line) of everything the firmware said
+        self.replies: dict[str, tuple[float, dict, str]] = {}    # prefix -> (time, parsed, raw) of the latest v2 reply of that kind
+        self.moves: list[dict] = []                              # samples of the move in progress / the last one: {'t','yaw','rate','corr'}
         self.ref_level, self.ref_speed, self.ref_yaw = int(ref_level), float(vmax_ref), float(yaw_ref)
         self.calibrated = bool(calibrated)
         self.level = LEVEL_DEFAULT
@@ -187,7 +210,7 @@ class SerialRover:
             return ""
         now = time.time()
         d, ir = self.telemetry.get("dist_cm"), self.telemetry.get("ir")
-        if self.sensors["dist"]:
+        if self.sensors["dist"] and self.us_guard:
             if now - self.sensors["dist"] > SENSOR_STALE_S:
                 return "the distance sensor has gone silent"
             if d is None:
@@ -247,9 +270,74 @@ class SerialRover:
             if line:
                 self._on_line(line)
 
+    # ------------------------------------------------------------------ firmware v2 ('!' commands)
+    def send_line(self, text: str):
+        """One '!' command line, e.g. send_line('HELLO') or send_line('MOVE F 1500 h'). Never needed by the key-driven path."""
+        self._write(b"!" + text.strip().encode() + b"\n")
+
+    def ask(self, text: str, prefix: str, timeout: float = 2.0) -> dict | None:
+        """Send a '!' command and wait for the reply line that starts with `prefix`. None on timeout (older firmware, or nothing answered)."""
+        t0 = time.time()
+        self.send_line(text)
+        end = t0 + timeout
+        while time.time() < end and not self._stop.is_set():
+            got = self.replies.get(prefix)
+            if got and got[0] >= t0:
+                return got[1]
+            time.sleep(0.02)
+        return None
+
+    def drive_duty(self, left: int, right: int, ms: int = 300):
+        """Firmware v2 direct drive (arcs possible): duties -255..255 for at most `ms` (the firmware caps it at 3000)."""
+        self.send_line(f"D {int(left)} {int(right)} {int(ms)}")
+
+    def run_move(self, direction: str, ms: int, hold: bool = False, timeout: float | None = None) -> dict | None:
+        """A firmware-timed move; returns the parsed 'mv done' line (yaw turned, average hold correction) or None."""
+        self.moves = []
+        t0 = time.time()
+        self.send_line(f"MOVE {direction} {int(ms)}{' h' if hold else ''}")
+        end = t0 + (timeout if timeout is not None else ms / 1000.0 + 2.0)
+        while time.time() < end and not self._stop.is_set():
+            got = self.replies.get("mv done")
+            if got and got[0] >= t0:
+                return got[1]
+            time.sleep(0.02)
+        return None
+
+    def _on_v2(self, line: str) -> bool:
+        """Remember a firmware v2 reply line. True if it was one."""
+        key = None
+        if line.startswith("mv done"):
+            key = "mv done"
+        elif line.startswith("mv start"):
+            key = "mv start"
+        elif line.startswith("mv t="):
+            p = parse_kv(line[3:])
+            self.moves.append({"t": p.get("t"), "yaw": p.get("yaw"), "rate": p.get("rate"), "corr": p.get("corr")})
+            return True
+        elif line.startswith("i2cscan"):
+            key = "i2cscan"
+        elif line.startswith("gyro zero"):
+            key = "gyro zero"
+        else:
+            for pre in V2_PREFIXES:
+                if line == pre or line.startswith(pre + " "):
+                    key = pre
+                    break
+        if key is None:
+            return False
+        parsed = parse_kv(line)
+        self.replies[key] = (time.time(), parsed, line)
+        if key == "hello":
+            self.hello = parsed
+        return True
+
     def _on_line(self, line: str):
         now = time.time()
         self.last_line = line
+        self.lines.append((now, line))
+        if self._on_v2(line):
+            return
         if line.startswith("tel "):
             self.tel_t = now
             for k, v in _TEL.findall(line[4:]):
@@ -267,6 +355,8 @@ class SerialRover:
                 elif k == "speed" and isinstance(val, float):
                     self.level = int(val)
                     self.telemetry["level"] = self.level
+                elif k in ("yaw", "rate", "hold") and isinstance(val, float):       # firmware v2: gyro heading (deg), turn rate (deg/s), heading-hold on
+                    self.telemetry[{"yaw": "yaw_deg", "rate": "rate_dps", "hold": "hold"}[k]] = val
                 elif k == "dir":
                     self.telemetry["dir"] = val
                 elif k == "up":

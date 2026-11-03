@@ -12,6 +12,7 @@ import numpy as np
 from ..core.geometry import Section
 from ..core.profiles import CameraSpec, RoverProfile
 from ..hardware.esp32cam import MJPEGClient
+from ..hardware.pins import load_pins
 from ..hardware.rover import Esp32Rover
 from ..hardware.serial_rover import RoverLinkError, SerialRover, is_serial_target
 from .session import Session, annotate, jpeg
@@ -23,7 +24,7 @@ REAL_DIR = ROOT / "datasets" / "real"
 
 # Every box must be ticked before the drive controls of a USB-serial rover unlock (checked here, not only in the browser).
 PRE_DRIVE = (("wheels_off", "The wheels are off the ground (the rover sits on a block), or the area around it is clear and I am next to it"),
-             ("battery_ok", "The battery pack reads at least 4.4 V on a multimeter (4 fresh AA NiMH)"),
+             ("battery_ok", "The 2S battery pack reads at least 7.2 V on a multimeter, and the buck output reads 5.0 to 5.7 V"),
              ("stop_works", "I pressed Stop once and the wheels stopped"),
              ("area_clear", "Nothing and nobody is in the rover's way, and I can reach the power switch"))
 
@@ -47,7 +48,8 @@ class HardwareManager:
         self.speed_scale = 1.0
         self.rover: Esp32Rover | SerialRover | None = None
         self.armed = False
-        self.serial_cal = {"calibrated": False, "level": 180}
+        self.serial_cal = {"calibrated": False, "level": 180, "us_guard": False}     # us_guard: the HC-SR04 may stop the rover, only after you confirmed it works
+        self.pins = load_pins()                                                      # the wiring map (config/hardware.json "pins"), used when flashing
         self.cam: MJPEGClient | None = None
         self.rover_host = ""
         self.cam_url = ""
@@ -72,6 +74,7 @@ class HardwareManager:
                 self.rover_host, self.cam_url = d.get("rover_host", ""), d.get("cam_url", "")
                 self.speed_scale = float(d.get("speed_scale", 1.0))
                 self.serial_cal = {**self.serial_cal, **d.get("serial_cal", {})}
+                self.pins = {**self.pins, **{k: int(v) for k, v in (d.get("pins") or {}).items() if k in self.pins}}
             except Exception:
                 pass
 
@@ -79,7 +82,7 @@ class HardwareManager:
         CONFIG.parent.mkdir(parents=True, exist_ok=True)
         CONFIG.write_text(json.dumps({"profile": self.profile.to_dict(), "pipe_diameter": self.pipe_d,
                                       "rover_host": self.rover_host, "cam_url": self.cam_url,
-                                      "speed_scale": self.speed_scale, "serial_cal": self.serial_cal}, indent=1))
+                                      "speed_scale": self.speed_scale, "serial_cal": self.serial_cal, "pins": self.pins}, indent=1))
 
     def _rebuild(self):
         self.session.configure(CameraModel.from_profile(self.profile))
@@ -111,7 +114,8 @@ class HardwareManager:
             if is_serial_target(self.rover_host):
                 p = self.profile
                 self.rover = SerialRover(self.rover_host, vmax_ref=p.max_speed, yaw_ref=1.5 * p.yaw_gain,
-                                         ref_level=int(self.serial_cal["level"]), calibrated=bool(self.serial_cal["calibrated"]))
+                                         ref_level=int(self.serial_cal["level"]), calibrated=bool(self.serial_cal["calibrated"]),
+                                         us_guard=bool(self.serial_cal.get("us_guard", False)))
             else:
                 host, _, port = self.rover_host.partition(":")
                 self.rover = Esp32Rover(host, int(port) if port else 4210)
