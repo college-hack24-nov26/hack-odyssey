@@ -31,3 +31,6 @@ config/cases/
 # Wi-Fi name and password for the rover firmware (tools/flash.py copies them into a temp folder only)
 config/wifi.json
 firmware/**/wifi_secrets.h
+
+# local Wi-Fi and secret settings for the rover firmware (never commit)
+**/config.local.h
