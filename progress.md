@@ -27,7 +27,12 @@ Describe a job in plain words. The software plans a machine from real parts, sim
 5. **C: flow cards** for requirements, equipment, the rover loop, and the build.
 6. **D: judges' demo hardening**, with the rover as the showcased outcome.
 
+## Repository housekeeping
+- Commit messages from Claude sessions carry a `Co-Authored-By: Claude` line, which makes GitHub list Claude as a contributor. Ten commits have it: three by us (`33e1a52`, `0f043b3`, `0ccdc72`) and seven by Om Tawde's earlier work. Commits after this note carry no such line.
+- The cleaned history for our three commits exists locally as `rewrite/strip-claude-trailers`. Pushing it needs a force-push to `main`, which was not allowed in the session; a backup is in `backup/pre-trailer-strip`.
+
 ## Blocked on you
+- **Commit history:** approve the force-push of `rewrite/strip-claude-trailers`, and agree with Om Tawde on whether his seven commit messages should be cleaned too.
 - **G0/G1 hardware gates:** wire the rover to the fixed pin map, then run the bring-up. Nothing about the real rover is claimed until its log exists.
 - **Flashing:** the firmware is flashed only after you confirm and I have given you the steps.
 - **Photos** of the bag and box, for target recognition.
